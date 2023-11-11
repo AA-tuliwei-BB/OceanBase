@@ -345,3 +345,7 @@ deps/3rd
 ############# test #############
 test/tmp
 test/var
+
+############# perf #############
+perf.data
+perf.data.old

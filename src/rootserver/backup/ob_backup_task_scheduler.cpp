@@ -1245,6 +1245,7 @@ void ObBackupTaskScheduler::run2()
 
 int ObBackupTaskScheduler::check_tenant_status_normal_(bool &is_normal)
 {
+  ob_usleep(sleep_time_ * 1000);
   int ret = OB_SUCCESS;
   is_normal = false;
   share::schema::ObSchemaGetterGuard guard;
@@ -1255,7 +1256,13 @@ int ObBackupTaskScheduler::check_tenant_status_normal_(bool &is_normal)
     LOG_WARN("fail to get tenant info", K(ret), K(tenant_id_));
   } else if (OB_NOT_NULL(tenant_info) && tenant_info->is_normal()) {
     is_normal = true;
+    sleep_time_ = 0;
+  } else {
+    LOG_WARN("MYTEST: false");
+    sleep_time_++;
   }
+  last_tenant_id_ = tenant_id_;
+  last_normal_result_ = is_normal;
   return ret;
 }
 

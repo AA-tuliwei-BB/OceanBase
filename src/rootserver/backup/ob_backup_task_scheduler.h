@@ -190,6 +190,9 @@ private:
   share::schema::ObMultiVersionSchemaService *schema_service_;
   common::ObArray<ObBackupService *> backup_srv_array_;
   DISALLOW_COPY_AND_ASSIGN(ObBackupTaskScheduler);
+  int sleep_time_ = 0;
+  uint64_t last_tenant_id_ = -1;
+  bool last_normal_result_ = false;
 };
 
 }  // end namespace rootserver
