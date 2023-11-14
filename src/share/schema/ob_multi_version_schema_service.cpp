@@ -1156,6 +1156,7 @@ int ObMultiVersionSchemaService::get_tenant_schema_guard(
     int64_t sys_schema_version/* = common::OB_INVALID_VERSION*/,
     const RefreshSchemaMode refresh_schema_mode /* = RefreshSchemaMode::NORMAL */)
 {
+  LOG_INFO("MYTRACE: get guard1");
   int ret = OB_SUCCESS;
   // For system tenants, tenant_schema_version and sys_schema_version are consistent
   sys_schema_version = OB_SYS_TENANT_ID == tenant_id ? tenant_schema_version : sys_schema_version;
@@ -1170,6 +1171,7 @@ int ObMultiVersionSchemaService::get_tenant_schema_guard(
   ObRefreshSchemaStatus tenant_schema_status;
   ObSchemaStore* sys_schema_store = NULL;
   ObSchemaStore* tenant_schema_store = NULL;
+  LOG_INFO("MYTRACE: get guard2");
   if (OB_INVALID_TENANT_ID == tenant_id) {
     ret = OB_INVALID_ARGUMENT;
     LOG_WARN("invalid tenant_id", K(ret), K(tenant_id));

@@ -117,6 +117,9 @@
 #include "storage/tx_storage/ob_ls_service.h"
 #include "storage/tablelock/ob_lock_inner_connection_util.h"
 
+#include <functional>
+#include <thread>
+
 
 namespace oceanbase
 {
@@ -181,6 +184,7 @@ ObDDLService::ObDDLService()
     index_name_checker_(),
     non_partitioned_tablet_allocator_()
 {
+  LOG_INFO("MYTEST: ddl service construct");
 }
 
 int ObDDLService::init(obrpc::ObSrvRpcProxy &rpc_proxy,
@@ -23202,11 +23206,51 @@ int ObDDLService::set_log_restore_source(
   return ret;
 }
 
+// void *create_sys_table_schemas_sub_function(void *arg_p) {
+//   LOG_INFO("MYTEST: create_sys_table_schemas7");
+//   std::vector<void *> &args = *(std::vector<void *> *)arg_p;
+//   LOG_INFO("MYTEST: create_sys_table_schemas7");
+//   share::ObTenantEnv::set_tenant((ObTenantBase *)args[5]);
+//   LOG_INFO("MYTEST: create_sys_table_schemas7");
+//   int thread_id = *(int *) args[0];
+//   LOG_INFO("MYTEST: create_sys_table_schemas7");
+//   ObDDLOperator &ddl_operator = *(ObDDLOperator *) args[1];
+//   LOG_INFO("MYTEST: create_sys_table_schemas7");
+//   ObMySQLTransaction &trans = *(ObMySQLTransaction *) args[2];
+//   LOG_INFO("MYTEST: create_sys_table_schemas7");
+//   common::ObIArray<ObTableSchema> &tables = *(common::ObIArray<ObTableSchema> *) args[3];
+//   LOG_INFO("MYTEST: create_sys_table_schemas7");
+//   int &ret = *(int *) args[4];
+//   LOG_INFO("MYTEST: create_sys_table_schemas7");
+//   ret = OB_SUCCESS;
+//   LOG_INFO("MYTEST: create_sys_table_schemas7");
+//   for (int64_t i = 0; OB_SUCC(ret) && i < tables.count(); i++) {
+//     if (i % 1 != thread_id) { // to change
+//       continue;
+//     }
+//     ObTableSchema &table = tables.at(i);
+//     const int64_t table_id = table.get_table_id();
+//     const ObString &table_name = table.get_table_name();
+//     const ObString *ddl_stmt = NULL;
+//     bool need_sync_schema_version = !(ObSysTableChecker::is_sys_table_index_tid(table_id) ||
+//                                       is_sys_lob_table(table_id));
+//     if (OB_FAIL(ddl_operator.create_table(table, trans, ddl_stmt,
+//                                           need_sync_schema_version,
+//                                           false /*is_truncate_table*/))) {
+//       LOG_WARN("add table schema failed", KR(ret), K(table_id), K(table_name));
+//     } else {
+//       LOG_INFO("add table schema succeed", K(i), K(table_id), K(table_name));
+//     }
+//   }
+//   return NULL;
+// }
+
 int ObDDLService::create_sys_table_schemas(
     ObDDLOperator &ddl_operator,
     ObMySQLTransaction &trans,
     common::ObIArray<ObTableSchema> &tables)
 {
+  LOG_INFO("MYTEST: create_sys_table_schemas", K(share::ObTenantEnv::get_tenant()));
   int ret = OB_SUCCESS;
   if (OB_FAIL(check_inner_stat())) {
     LOG_WARN("variable is not init", KR(ret));
@@ -23215,22 +23259,84 @@ int ObDDLService::create_sys_table_schemas(
     ret = OB_ERR_UNEXPECTED;
     LOG_WARN("ptr is null", KR(ret), KP_(sql_proxy), KP_(schema_service));
   } else {
+
+    LOG_INFO("MYTEST: create_sys_table_schemas2");
+    #define thread_num 1
     // persist __all_core_table's schema in inner table, which is only used for sys views.
-    for (int64_t i = 0; OB_SUCC(ret) && i < tables.count(); i++) {
-      ObTableSchema &table = tables.at(i);
-      const int64_t table_id = table.get_table_id();
-      const ObString &table_name = table.get_table_name();
-      const ObString *ddl_stmt = NULL;
-      bool need_sync_schema_version = !(ObSysTableChecker::is_sys_table_index_tid(table_id) ||
-                                        is_sys_lob_table(table_id));
-      if (OB_FAIL(ddl_operator.create_table(table, trans, ddl_stmt,
-                                            need_sync_schema_version,
-                                            false /*is_truncate_table*/))) {
-        LOG_WARN("add table schema failed", KR(ret), K(table_id), K(table_name));
-      } else {
-        LOG_INFO("add table schema succeed", K(i), K(table_id), K(table_name));
+    auto my_lambda = [&tables, &trans, &ddl_operator](int thread_id, ObTenantBase* ctx, int *ret_p) {
+      LOG_INFO("MYTEST", K(share::ObTenantEnv::get_tenant()));
+      share::ObTenantEnv::set_tenant(ctx);
+      int &ret = *ret_p;
+      ret = OB_SUCCESS;
+      for (int64_t i = 0; OB_SUCC(ret) && i < tables.count(); i++) {
+        if (i % thread_num != thread_id) {
+          continue;
+        }
+        ObTableSchema &table = tables.at(i);
+        const int64_t table_id = table.get_table_id();
+        const ObString &table_name = table.get_table_name();
+        const ObString *ddl_stmt = NULL;
+        bool need_sync_schema_version = !(ObSysTableChecker::is_sys_table_index_tid(table_id) ||
+                                          is_sys_lob_table(table_id));
+        if (OB_FAIL(ddl_operator.create_table(table, trans, ddl_stmt,
+                                              need_sync_schema_version,
+                                              false /*is_truncate_table*/))) {
+          LOG_WARN("add table schema failed", KR(ret), K(table_id), K(table_name));
+        } else {
+          LOG_INFO("add table schema succeed", K(i), K(table_id), K(table_name));
+        }
       }
-    }
+      //return NULL;
+    };
+
+
+    std::function<void(int, ObTenantBase*, int *)> my_function = my_lambda;
+    std::vector<std::thread> threads;
+    std::vector<int> result;
+    result.resize(thread_num);
+    auto ctx = share::ObTenantEnv::get_tenant();
+    LOG_INFO("MYTEST", K(ctx));
+    my_lambda(0, ctx, &result[0]);
+    // for (int i = 0; i < thread_num; ++i) {
+    //   threads.push_back(std::thread(my_function, i, ctx, &result[i]));
+    // }
+    // for (auto &thread : threads) {
+    //   thread.join();
+    // }
+
+    // int tmp;
+    // my_lambda(0, &tmp);
+    // ret = tmp;
+    // LOG_INFO("MYTEST: create_sys_table_schemas3");
+    // std::vector<ObPThread *> threads;
+    // std::vector<int> result;
+    // result.resize(thread_num);
+    // std::vector<int> thread_id;
+    // thread_id.resize(thread_num);
+    // std::vector<std::vector<void *>> args;
+    // args.resize(thread_num);
+    // void *(*my_function)(void *) = create_sys_table_schemas_sub_function;
+    // LOG_INFO("MYTEST: create_sys_table_schemas4");
+    // for (int i = 0; i < thread_num; ++i) {
+    //   thread_id[i] = i;
+    //   args[i].resize(6);
+    //   args[i][0] = &thread_id[i];
+    //   args[i][1] = &ddl_operator;
+    //   args[i][2] = &trans;
+    //   args[i][3] = &tables;
+    //   args[i][4] = &ret;
+    //   args[i][5] = (void *) share::ObTenantEnv::get_tenant();
+    //   threads.push_back(new ObPThread(my_function, (void *)&args[i]));
+    //   LOG_INFO("MYTEST: create_sys_table_schemas5");
+    //   threads[i]->run1();
+    //   LOG_INFO("MYTEST: create_sys_table_schemas6");
+    // }
+    // for (auto thread : threads) {
+    //   LOG_INFO("MYTEST: create_sys_table_schemas6", K(thread));
+    //   thread->try_wait();
+    //   delete thread;
+    // }
+    #undef thread_num
   }
   return ret;
 }

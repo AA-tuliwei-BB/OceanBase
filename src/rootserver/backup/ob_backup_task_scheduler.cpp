@@ -1237,6 +1237,9 @@ void ObBackupTaskScheduler::run2()
           set_idle_time(60*1000*1000);
           idle();
         }
+      } else {
+        set_idle_time(ObBackupBaseService::OB_FALST_IDLE_TIME);
+        idle();
       }
     }
     LOG_INFO("backup task scheduler stop");
@@ -1245,7 +1248,7 @@ void ObBackupTaskScheduler::run2()
 
 int ObBackupTaskScheduler::check_tenant_status_normal_(bool &is_normal)
 {
-  ob_usleep(sleep_time_ * 1000);
+  //ob_usleep(sleep_time_ * 1000);
   int ret = OB_SUCCESS;
   is_normal = false;
   share::schema::ObSchemaGetterGuard guard;
@@ -1258,7 +1261,7 @@ int ObBackupTaskScheduler::check_tenant_status_normal_(bool &is_normal)
     is_normal = true;
     sleep_time_ = 0;
   } else {
-    LOG_WARN("MYTEST: false");
+    //LOG_WARN("MYTEST: false");
     sleep_time_++;
   }
   last_tenant_id_ = tenant_id_;

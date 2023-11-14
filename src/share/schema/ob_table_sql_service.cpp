@@ -1170,6 +1170,7 @@ int ObTableSqlService::add_columns_for_core(ObISQLClient &sql_client, const ObTa
   return ret;
 }
 
+// MYTAG: 优化这里
 int ObTableSqlService::add_columns_for_not_core(ObISQLClient &sql_client,
                                                 const ObTableSchema &table)
 {
@@ -1205,6 +1206,8 @@ int ObTableSqlService::add_columns_for_not_core(ObISQLClient &sql_client,
         } else if (OB_FAIL(trans->get_stash_query(tenant_id, OB_ALL_COLUMN_HISTORY_TNAME, stash_desc2))) {
           LOG_WARN("get_stash_query fail", K(ret), K(tenant_id));
         }
+        LOG_WARN("table stash scene is not match", K(stash_desc->get_row_cnt()), K(stash_desc2->get_row_cnt()));
+        LOG_WARN("MYTEST1", K(stash_desc->get_stash_query()), K(stash_desc2->get_stash_query()));
       }
       if (OB_SUCC(ret)) {
         column_sql_ptr = &stash_desc->get_stash_query();
@@ -2352,6 +2355,7 @@ int ObTableSqlService::create_table(ObTableSchema &table,
                                     const bool need_sync_schema_version,
                                     const bool is_truncate_table /*false*/)
 {
+  LOG_INFO("MYTEST: create table");
   int ret = OB_SUCCESS;
   int64_t start_usec = ObTimeUtility::current_time();
   int64_t end_usec = 0;

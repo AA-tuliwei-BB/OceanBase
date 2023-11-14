@@ -1431,6 +1431,7 @@ int ObService::bootstrap(const obrpc::ObBootstrapArg &arg)
     } else if (OB_FAIL(pre_bootstrap.prepare_bootstrap(master_rs))) {
       BOOTSTRAP_LOG(ERROR, "failed to prepare boot strap", K(rs_list), K(ret));
     } else {
+      LOG_INFO("MYTEST: after prepare bootstrap");
       const ObCommonRpcProxy &rpc_proxy = *gctx_.rs_rpc_proxy_;
       bool boot_done = false;
       const int64_t MAX_RETRY_COUNT = 30;
@@ -1440,6 +1441,7 @@ int ObService::bootstrap(const obrpc::ObBootstrapArg &arg)
         if (INT64_MAX != THIS_WORKER.get_timeout_ts()) {
           rpc_timeout = max(rpc_timeout, THIS_WORKER.get_timeout_remain());
         }
+        LOG_INFO("MYTEST: bootstrap", K(i));
         if (OB_FAIL(rpc_proxy.to_addr(master_rs).timeout(rpc_timeout)
                     .execute_bootstrap(arg))) {
           if (OB_RS_NOT_MASTER == ret) {
@@ -1452,6 +1454,7 @@ int ObService::bootstrap(const obrpc::ObBootstrapArg &arg)
             break;
           }
         } else {
+          LOG_INFO("MYTEST: bootstrap", K(i));
           boot_done = true;
         }
       }

@@ -237,6 +237,7 @@ ObPreBootstrap::ObPreBootstrap(ObSrvRpcProxy &rpc_proxy,
 
 int ObPreBootstrap::prepare_bootstrap(ObAddr &master_rs)
 {
+  LOG_INFO("MYTEST: prepare_bootstrap");
   int ret = OB_SUCCESS;
   bool is_empty = false;
   bool match = false;
@@ -267,6 +268,7 @@ int ObPreBootstrap::prepare_bootstrap(ObAddr &master_rs)
     LOG_WARN("failed to wait elect master partition", KR(ret));
   }
   BOOTSTRAP_CHECK_SUCCESS();
+  LOG_INFO("MYTEST: finish prepare_bootstrap");
   return ret;
 }
 
@@ -544,8 +546,10 @@ ObBootstrap::ObBootstrap(
     common_proxy_(rs_rpc_proxy),
     begin_ts_(0)
 {
+  LOG_INFO("MYTEST: ?????");
 }
 
+//MYTAG: 优化这里
 int ObBootstrap::execute_bootstrap(rootserver::ObServerZoneOpService &server_zone_op_service)
 {
   int ret = OB_SUCCESS;
@@ -941,6 +945,8 @@ int ObBootstrap::broadcast_sys_schema(const ObSArray<ObTableSchema> &table_schem
   return ret;
 }
 
+// MYTAG: 优化这里
+// 这里跑了一分钟
 int ObBootstrap::create_all_schema(ObDDLService &ddl_service,
                                    ObIArray<ObTableSchema> &table_schemas)
 {

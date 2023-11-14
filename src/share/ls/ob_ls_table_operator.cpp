@@ -29,6 +29,7 @@ ObLSTableOperator::ObLSTableOperator()
     rpc_ls_(),
     persistent_ls_()
 {
+  LOG_INFO("MYTEST: table operator construct");
 }
 
 ObLSTableOperator::~ObLSTableOperator()

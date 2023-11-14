@@ -1468,11 +1468,17 @@ int ObDDLOperator::create_table(ObTableSchema &table_schema,
                                 const bool need_sync_schema_version,
                                 const bool is_truncate_table /*false*/)
 {
+  LOG_INFO("MYTEST: ddl operator create table");
   int ret = OB_SUCCESS;
   const uint64_t tenant_id = table_schema.get_tenant_id();
   int64_t new_schema_version = OB_INVALID_VERSION;
   ObSchemaService *schema_service = schema_service_.get_schema_service();
   ObSchemaGetterGuard schema_guard;
+  LOG_INFO("MYTEST: ddl operator create table2, ", K(tenant_id));
+  LOG_INFO("MYTEST: ddl operator create table3", K(schema_service));
+  // schema_service_.get_tenant_schema_guard(tenant_id, schema_guard);
+  // LOG_INFO("MYTEST: ddl operator create table3");
+
   if (OB_ISNULL(schema_service)) {
     ret = OB_ERR_SYS;
     RS_LOG(ERROR, "schema_service must not null");
@@ -1481,6 +1487,7 @@ int ObDDLOperator::create_table(ObTableSchema &table_schema,
   } else if (OB_FAIL(schema_service_.gen_new_schema_version(tenant_id, new_schema_version))) {
     LOG_WARN("fail to gen new schema_version", K(ret), K(tenant_id));
   } else {
+    LOG_INFO("MYTEST: ddl operator create table3");
     table_schema.set_schema_version(new_schema_version);
     if (OB_FAIL(schema_service->get_table_sql_service().create_table(
         table_schema,
@@ -1495,8 +1502,10 @@ int ObDDLOperator::create_table(ObTableSchema &table_schema,
     } else if (OB_FAIL(sync_version_for_cascade_mock_fk_parent_table(table_schema.get_tenant_id(), table_schema.get_depend_mock_fk_parent_table_ids(), trans))) {
       LOG_WARN("fail to sync cascade depend_mock_fk_parent_table_ids table", K(ret));
     }
+  LOG_INFO("MYTEST: ddl operator create table4");
   }
 
+  LOG_INFO("MYTEST: ddl operator create table5");
   // add audit in table if necessary
   if (OB_SUCC(ret) && !is_truncate_table && (table_schema.is_user_table() || table_schema.is_external_table())) {
     const uint64_t tenant_id = table_schema.get_tenant_id();

@@ -1041,6 +1041,7 @@ void ObRootService::destroy()
   }
 }
 
+// MYTAG: 处理这里
 int ObRootService::start_service()
 {
   int ret = OB_SUCCESS;
@@ -1082,9 +1083,9 @@ int ObRootService::start_service()
       FLOG_WARN("lst_operator set as rs leader failed", KR(ret));
     } else if (OB_FAIL(rs_status_.set_rs_status(status::IN_SERVICE))) {
       FLOG_WARN("fail to set rs status", KR(ret));
-    } else if (OB_FAIL(schedule_refresh_server_timer_task(0))) {
+    } else if (OB_FAIL(schedule_refresh_server_timer_task(4000 * 1000))) {
       FLOG_WARN("failed to schedule refresh_server task", KR(ret));
-    } else if (OB_FAIL(schedule_restart_timer_task(0))) {
+    } else if (OB_FAIL(schedule_restart_timer_task(4000 * 1000))) {
       FLOG_WARN("failed to schedule restart task", KR(ret));
     } else if (OB_FAIL(schema_service_->get_ddl_epoch_mgr().remove_all_ddl_epoch())) {
       FLOG_WARN("fail to remove ddl epoch", KR(ret));
@@ -1941,6 +1942,7 @@ int ObRootService::do_after_full_service() {
 }
 
 ////////////////////////////////////////////////////////////////
+// MYTAG 优化这里
 int ObRootService::execute_bootstrap(const obrpc::ObBootstrapArg &arg)
 {
   int ret = OB_SUCCESS;
@@ -1997,6 +1999,7 @@ int ObRootService::execute_bootstrap(const obrpc::ObBootstrapArg &arg)
     } else if (OB_FAIL(set_cpu_quota_concurrency_config_())) {
       LOG_WARN("failed to update cpu_quota_concurrency", K(ret));
     }
+    BOOTSTRAP_LOG(INFO, "end start to do_restart");
 
     if (OB_SUCC(ret)) {
       char ori_min_server_version[OB_SERVER_VERSION_LENGTH] = {'\0'};

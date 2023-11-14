@@ -73,6 +73,7 @@ def __create_tenant(cursor, *,
 
 
 if __name__ == "__main__":
+    start_time = time.time()
     log_level = logging.INFO
     log_format = "%(asctime)s.%(msecs)03d [%(levelname)-5s] - %(message)s " \
                 "(%(name)s [%(funcName)s@%(filename)s:%(lineno)s] [%(threadName)s] P:%(process)d T:%(thread)d)"
@@ -124,7 +125,7 @@ if __name__ == "__main__":
     shell_result = subprocess.run(observer_cmd, shell=True)
     _logger.info('deploy done. returncode=%d', shell_result.returncode)
 
-    time.sleep(2)
+    #time.sleep(2)
     try:
         db = __try_to_connect(args.ip, int(args.mysql_port))
         cursor = db.cursor(cursor=mysql.cursors.DictCursor)
@@ -160,3 +161,9 @@ if __name__ == "__main__":
         _logger.info('exception: %s', str(ex))
         _logger.info(traceback.format_exc())
         exit(1)
+
+    # 记录结束时间
+    end_time = time.time()
+    # 计算运行时间
+    elapsed_time = end_time - start_time
+    print(f"exec_time:{elapsed_time} second")

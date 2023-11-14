@@ -2047,6 +2047,7 @@ private:
       const uint64_t tenant_id,
       const ObString &tenant_name,
       const share::ObTenantRole &tenant_role);
+  //void *create_sys_table_schemas_sub_function(void *);
   int create_sys_table_schemas(
       ObDDLOperator &ddl_operator,
       ObMySQLTransaction &trans,
