@@ -92,6 +92,7 @@ void ObCreateStandbyFromNetActor::do_work()
       idle(get_idle_interval_us_());
     }
   }
+  LOG_INFO("MYTEST: tenant end, standby from net actor end");
 }
 
 void ObCreateStandbyFromNetActor::destroy()

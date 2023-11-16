@@ -307,6 +307,7 @@ int ObDBMSJobMaster::stop()
 
 int ObDBMSJobMaster::scheduler()
 {
+  LOG_INFO("MYTEST: ObDBMJobMaster scheduler start");
   int ret = OB_SUCCESS;
   if (!inited_) {
     ret = OB_ERR_UNEXPECTED;
@@ -345,6 +346,7 @@ int ObDBMSJobMaster::scheduler()
     LOG_INFO("NOTICE: DBMS Job master end running!", K(ret), K(running_));
     running_ = false;
   }
+  LOG_INFO("MYTEST: ObDBMJobMaster scheduler end");
   return ret;
 }
 

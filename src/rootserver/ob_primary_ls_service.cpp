@@ -61,8 +61,10 @@ void ObPrimaryLSService::destroy()
   inited_ = false;
 }
 
+// MYTAG: 严查primaryls
 void ObPrimaryLSService::do_work()
 {
+  LOG_INFO("MYTEST: PrimaryLSService start");
   int ret = OB_SUCCESS;
   if (OB_UNLIKELY(!inited_)) {
     ret = OB_NOT_INIT;
@@ -70,7 +72,7 @@ void ObPrimaryLSService::do_work()
   } else if (OB_FAIL(wait_tenant_schema_and_version_ready_(tenant_id_, DATA_VERSION_4_1_0_0))) {
     LOG_WARN("failed to wait tenant schema version ready", KR(ret), K(tenant_id_), K(DATA_CURRENT_VERSION));
   } else {
-    int64_t idle_time_us = 1000 * 1000L;
+    int64_t idle_time_us = 1000 * 1000L; // MYCHANGE
     int tmp_ret = OB_SUCCESS;
     share::schema::ObTenantSchema tenant_schema;
     while (!has_set_stop()) {
@@ -97,6 +99,7 @@ void ObPrimaryLSService::do_work()
       idle(idle_time_us);
     }// end while
   }
+  LOG_INFO("MYTEST: tenant end, primary ls service end");
 }
 
 

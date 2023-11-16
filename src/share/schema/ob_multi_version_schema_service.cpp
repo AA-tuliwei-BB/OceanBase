@@ -1156,7 +1156,7 @@ int ObMultiVersionSchemaService::get_tenant_schema_guard(
     int64_t sys_schema_version/* = common::OB_INVALID_VERSION*/,
     const RefreshSchemaMode refresh_schema_mode /* = RefreshSchemaMode::NORMAL */)
 {
-  LOG_INFO("MYTRACE: get guard1");
+  // LOG_INFO("MYTRACE: get guard1");
   int ret = OB_SUCCESS;
   // For system tenants, tenant_schema_version and sys_schema_version are consistent
   sys_schema_version = OB_SYS_TENANT_ID == tenant_id ? tenant_schema_version : sys_schema_version;
@@ -1171,7 +1171,7 @@ int ObMultiVersionSchemaService::get_tenant_schema_guard(
   ObRefreshSchemaStatus tenant_schema_status;
   ObSchemaStore* sys_schema_store = NULL;
   ObSchemaStore* tenant_schema_store = NULL;
-  LOG_INFO("MYTRACE: get guard2");
+  // LOG_INFO("MYTRACE: get guard2");
   if (OB_INVALID_TENANT_ID == tenant_id) {
     ret = OB_INVALID_ARGUMENT;
     LOG_WARN("invalid tenant_id", K(ret), K(tenant_id));
@@ -2901,6 +2901,7 @@ int ObMultiVersionSchemaService::publish_schema(const uint64_t tenant_id)
   } else if (OB_FAIL(add_schema(tenant_id, force_add))) {
     LOG_WARN("fail to add schema", K(ret), K(tenant_id));
   }
+  LOG_INFO("MYTEST: publish_schema");
   return ret;
 }
 
@@ -4136,6 +4137,7 @@ int ObMultiVersionSchemaService::gen_new_schema_version(
     int64_t &schema_version)
 {
   int ret = OB_SUCCESS;
+  LOG_INFO("MYTEST: gen_new_schema_version");
   int64_t refreshed_schema_version = OB_INVALID_VERSION;
   schema_version = OB_INVALID_VERSION;
   if (OB_INVALID_TENANT_ID == tenant_id) {

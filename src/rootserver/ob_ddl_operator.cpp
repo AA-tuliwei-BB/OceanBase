@@ -1489,6 +1489,7 @@ int ObDDLOperator::create_table(ObTableSchema &table_schema,
   } else {
     LOG_INFO("MYTEST: ddl operator create table3");
     table_schema.set_schema_version(new_schema_version);
+    LOG_INFO("MYTEST: ddl operator create table4");
     if (OB_FAIL(schema_service->get_table_sql_service().create_table(
         table_schema,
         trans,

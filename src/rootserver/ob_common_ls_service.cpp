@@ -111,6 +111,7 @@ void ObCommonLSService::do_work()
       idle(idle_time_us);
     }  // end while
   }
+  LOG_INFO("MYTEST: tenant end, ob_common_ls_service end");
 }
 
 

@@ -22602,6 +22602,7 @@ int ObDDLService::create_normal_tenant(
   LOG_INFO("[CREATE_TENANT] STEP 2. start create tenant", K(tenant_id), K(tenant_schema));
   int ret = OB_SUCCESS;
   ObSArray<ObTableSchema> tables;
+  std::vector<int> tables_group_offset;
   if (OB_FAIL(check_inner_stat())) {
     LOG_WARN("variable is not init", KR(ret));
   } else if (OB_UNLIKELY(!recovery_until_scn.is_valid_and_not_min())) {
@@ -22616,13 +22617,13 @@ int ObDDLService::create_normal_tenant(
     LOG_WARN("fail to create tenant sys log stream", KR(ret), K(tenant_schema), K(pool_list), K(palf_base_info));
   } else if (is_user_tenant(tenant_id) && !tenant_role.is_primary()) {
     //standby cluster no need create sys tablet and init tenant schema
-  } else if (OB_FAIL(ObSchemaUtils::construct_inner_table_schemas(tenant_id, tables))) {
+  } else if (OB_FAIL(ObSchemaUtils::construct_inner_table_schemas(tenant_id, tables_group_offset, tables))) {
     LOG_WARN("fail to get inner table schemas in tenant space", KR(ret), K(tenant_id));
   } else if (OB_FAIL(broadcast_sys_table_schemas(tenant_id, tables))) {
     LOG_WARN("fail to broadcast sys table schemas", KR(ret), K(tenant_id));
   } else if (OB_FAIL(create_tenant_sys_tablets(tenant_id, tables))) {
     LOG_WARN("fail to create tenant partitions", KR(ret), K(tenant_id));
-  } else if (OB_FAIL(init_tenant_schema(tenant_id, tenant_schema,
+  } else if (OB_FAIL(init_tenant_schema(tenant_id, tenant_schema, tables_group_offset,
              tenant_role, recovery_until_scn, tables, sys_variable, init_configs,
              is_creating_standby, log_restore_source))) {
     LOG_WARN("fail to init tenant schema", KR(ret), K(tenant_role), K(recovery_until_scn),
@@ -23007,6 +23008,7 @@ int ObDDLService::create_tenant_sys_tablets(
 int ObDDLService::init_tenant_schema(
     const uint64_t tenant_id,
     const ObTenantSchema &tenant_schema,
+    std::vector<int> &tables_group_offset,
     const share::ObTenantRole &tenant_role,
     const SCN &recovery_until_scn,
     common::ObIArray<ObTableSchema> &tables,
@@ -23085,22 +23087,74 @@ int ObDDLService::init_tenant_schema(
 
     // 2. init tenant schema
     if (OB_SUCC(ret)) {
-      ObDDLSQLTransaction trans(schema_service_, true, true, false, false);
+      LOG_INFO("MYTEST: tables_count", K(tables.count()));
+      for (int i = 0; i < tables.count(); ++i) {
+        LOG_INFO("MYTEST: tables", K(tables.at(i)));
+      }
+
+      auto ctx = share::ObTenantEnv::get_tenant();
       const int64_t init_schema_version = tenant_schema.get_schema_version();
       int64_t new_schema_version = OB_INVALID_VERSION;
       ObDDLOperator ddl_operator(*schema_service_, *sql_proxy_);
       //FIXME:(yanmu.ztl) lock tenant's __all_core_table
       const int64_t refreshed_schema_version = 0;
+
+      ObDDLSQLTransaction trans(schema_service_, true, true, false, false);
       if (OB_FAIL(trans.start(sql_proxy_, tenant_id, refreshed_schema_version))) {
         LOG_WARN("fail to start trans", KR(ret), K(tenant_id));
-      } else if (OB_FAIL(create_sys_table_schemas(ddl_operator, trans, tables))) {
+      }
+
+      // auto my_lambda = [&] (int thread_id, int mode, int *ret_p) {
+      //   std::string thread_name = "my_create_table" + std::to_string(thread_id);
+      //   ob_get_origin_thread_name() = thread_name.c_str();
+      //   share::ObTenantEnv::set_tenant(ctx);
+      //   // LOG_INFO("MYTEST", K(share::ObTenantEnv::get_tenant()));
+      //   int &ret = *ret_p;
+      //   ret = OB_SUCCESS;
+        // ObDDLSQLTransaction trans(schema_service_, true, true, false, false);
+        // if (OB_FAIL(trans.start(sql_proxy_, tenant_id, refreshed_schema_version))) {
+        //   LOG_WARN("fail to start trans", KR(ret), K(tenant_id));
+        // }
+        // ObDDLOperator sub_ddl_operator(*schema_service_, *sql_proxy_);
+        // if (OB_FAIL(create_sys_table_schemas(thread_id, mode, tables_group_offset, sub_ddl_operator, trans, tables))) {
+        //   LOG_WARN("fail to create sys tables", KR(ret), K(tenant_id));
+        // }
+        // if (trans.is_started()) {
+        //   int temp_ret = OB_SUCCESS;
+        //   bool commit = OB_SUCC(ret);
+        //   if (OB_SUCCESS != (temp_ret = trans.end(commit))) {
+        //     ret = (OB_SUCC(ret)) ? temp_ret : ret;
+        //     LOG_WARN("trans end failed", K(commit), K(temp_ret));
+        //   }
+        // }
+      // };
+
+      // std::function<void(int, int, int *)> my_function = my_lambda;
+      // std::vector<std::thread> threads;
+      // std::vector<int> result;
+      // result.resize(tables_group_offset.size() - 1);
+      // // my_lambda(thread_id, ctx, "my_create_table", &result[0]);
+      // for (int i = 1; i < 5; ++i) {
+      //   std::thread thread(my_function, i - 1, i, &result[i - 1]);
+      //   thread.join();
+      // }
+      // for (int i = 5; i < int(tables_group_offset.size()); ++i) {
+      //   threads.push_back(std::thread(my_function, i - 1, i, &result[i - 1]));
+      // }
+      // for (auto &thread : threads) {
+      //   thread.join();
+      // }
+      // LOG_INFO("MYTEST: all thread joint");
+
+      if (OB_FAIL(create_sys_table_schemas(tables))) {
         LOG_WARN("fail to create sys tables", KR(ret), K(tenant_id));
-      } else if (is_user_tenant(tenant_id) && OB_FAIL(set_sys_ls_status(tenant_id))) {
+      }
+      if (is_user_tenant(tenant_id) && OB_FAIL(set_sys_ls_status(tenant_id))) {
         LOG_WARN("failed to set sys ls status", KR(ret), K(tenant_id));
       } else if (OB_FAIL(schema_service_impl->gen_new_schema_version(
-                 tenant_id, init_schema_version, new_schema_version))) {
+                tenant_id, init_schema_version, new_schema_version))) {
       } else if (OB_FAIL(ddl_operator.replace_sys_variable(
-                 sys_variable, new_schema_version, trans, OB_DDL_ALTER_SYS_VAR))) {
+                sys_variable, new_schema_version, trans, OB_DDL_ALTER_SYS_VAR))) {
         LOG_WARN("fail to replace sys variable", KR(ret), K(sys_variable));
       } else if (OB_FAIL(ddl_operator.init_tenant_env(tenant_schema, sys_variable, tenant_role,
                                                       recovery_until_scn, init_configs, trans))) {
@@ -23158,6 +23212,7 @@ int ObDDLService::init_tenant_schema(
       }
     }
 
+    LOG_INFO("CREATE_TENANT start set baseline schema version", KR(ret));
     // 3. set baseline schema version
     if (OB_SUCC(ret)) {
       ObGlobalStatProxy global_stat_proxy(*sql_proxy_, tenant_id);
@@ -23246,8 +23301,8 @@ int ObDDLService::set_log_restore_source(
 // }
 
 int ObDDLService::create_sys_table_schemas(
-    ObDDLOperator &ddl_operator,
-    ObMySQLTransaction &trans,
+    // ObDDLOperator &ddl_operator,
+    // ObMySQLTransaction &trans,
     common::ObIArray<ObTableSchema> &tables)
 {
   LOG_INFO("MYTEST: create_sys_table_schemas", K(share::ObTenantEnv::get_tenant()));
@@ -23258,85 +23313,207 @@ int ObDDLService::create_sys_table_schemas(
              || OB_ISNULL(schema_service_)) {
     ret = OB_ERR_UNEXPECTED;
     LOG_WARN("ptr is null", KR(ret), KP_(sql_proxy), KP_(schema_service));
-  } else {
+  } else if (OB_FAIL(parallel_create_table_schema(tables.at(0).get_tenant_id(), tables))) {
+    LOG_WARN("create_sys_table_schemas", K(ret));
+  }
+  return ret;
 
-    LOG_INFO("MYTEST: create_sys_table_schemas2");
-    #define thread_num 1
-    // persist __all_core_table's schema in inner table, which is only used for sys views.
-    auto my_lambda = [&tables, &trans, &ddl_operator](int thread_id, ObTenantBase* ctx, int *ret_p) {
-      LOG_INFO("MYTEST", K(share::ObTenantEnv::get_tenant()));
-      share::ObTenantEnv::set_tenant(ctx);
-      int &ret = *ret_p;
-      ret = OB_SUCCESS;
-      for (int64_t i = 0; OB_SUCC(ret) && i < tables.count(); i++) {
-        if (i % thread_num != thread_id) {
-          continue;
-        }
-        ObTableSchema &table = tables.at(i);
-        const int64_t table_id = table.get_table_id();
-        const ObString &table_name = table.get_table_name();
+  // else {
+  //   LOG_INFO("MYTEST: create_sys_table_schemas2");
+  //   // persist __all_core_table's schema in inner table, which is only used for sys views.
+  //   auto my_lambda = [&tables, &trans, &ddl_operator, &tables_group_offset, &mode](int thread_id, ObTenantBase* ctx, const char *thread_name, int *ret_p) {
+  //     // ob_get_origin_thread_name() = thread_name;
+  //     // LOG_INFO("MYTEST", K(share::ObTenantEnv::get_tenant()));
+  //     // share::ObTenantEnv::set_tenant(ctx);
+  //     int &ret = *ret_p;
+  //     ret = OB_SUCCESS;
+  //     if (mode >= tables_group_offset.size()) {
+  //       return;
+  //     }
+  //     LOG_INFO("MYTEST: create_table", K(tables_group_offset[mode - 1]), K(tables_group_offset[mode]));
+  //     int retry_times = 0;
+  //     for (int64_t i = tables_group_offset[mode - 1]; OB_SUCC(ret) && i < tables_group_offset[mode]; i++) {
+  //       // if (i % thread_num != thread_id) {
+  //       //   continue;
+  //       // }
+  //       ObTableSchema &table = tables.at(i);
+  //       const int64_t table_id = table.get_table_id();
+  //       const ObString &table_name = table.get_table_name();
+  //       const ObString *ddl_stmt = NULL;
+  //       bool need_sync_schema_version = !(ObSysTableChecker::is_sys_table_index_tid(table_id) ||
+  //                                         is_sys_lob_table(table_id));
+  //       if (OB_FAIL(ddl_operator.create_table(table, trans, ddl_stmt,
+  //                                             need_sync_schema_version,
+  //                                             false /*is_truncate_table*/))) {
+  //         LOG_WARN("add table schema failed", KR(ret), K(table_id), K(table_name));
+  //         if (retry_times < 10) {
+  //           ob_usleep(1L * 1000 * 1000);
+  //           ++retry_times;
+  //           ret = OB_SUCCESS;
+  //           --i;
+  //           continue;
+  //         }
+  //       } else {
+  //         retry_times = 0;
+  //         LOG_INFO("add table schema succeed", K(i), K(table_id), K(table_name));
+  //       }
+  //     }
+  //     //return NULL;
+  //   };
+
+  //   // std::function<void(int, ObTenantBase*, const char*, int *)> my_function = my_lambda;
+  //   // std::vector<std::thread> threads;
+  //   // std::vector<int> result;
+  //   // result.resize(thread_num);
+  //   // std::vector<std::string> thread_name;
+  //   // thread_name.resize(thread_num);
+  //   int result;
+  //   auto ctx = share::ObTenantEnv::get_tenant();
+  //   LOG_INFO("MYTEST", K(ctx));
+  //   my_lambda(thread_id, ctx, "my_create_table", &result);
+  //   // for (int i = 0; i < thread_num; ++i) {
+  //   //   thread_name[i] = "my_asdf_create_table" + std::to_string(i);
+  //   //   threads.push_back(std::thread(my_function, i, ctx, thread_name[i].c_str(), &result[i]));
+  //   // }
+  //   // for (auto &thread : threads) {
+  //   //   thread.join();
+  //   // }
+
+  //   // int tmp;
+  //   // my_lambda(0, &tmp);
+  //   // ret = tmp;
+  //   // LOG_INFO("MYTEST: create_sys_table_schemas3");
+  //   // std::vector<ObPThread *> threads;
+  //   // std::vector<int> result;
+  //   // result.resize(thread_num);
+  //   // std::vector<int> thread_id;
+  //   // thread_id.resize(thread_num);
+  //   // std::vector<std::vector<void *>> args;
+  //   // args.resize(thread_num);
+  //   // void *(*my_function)(void *) = create_sys_table_schemas_sub_function;
+  //   // LOG_INFO("MYTEST: create_sys_table_schemas4");
+  //   // for (int i = 0; i < thread_num; ++i) {
+  //   //   thread_id[i] = i;
+  //   //   args[i].resize(6);
+  //   //   args[i][0] = &thread_id[i];
+  //   //   args[i][1] = &ddl_operator;
+  //   //   args[i][2] = &trans;
+  //   //   args[i][3] = &tables;
+  //   //   args[i][4] = &ret;
+  //   //   args[i][5] = (void *) share::ObTenantEnv::get_tenant();
+  //   //   threads.push_back(new ObPThread(my_function, (void *)&args[i]));
+  //   //   LOG_INFO("MYTEST: create_sys_table_schemas5");
+  //   //   threads[i]->run1();
+  //   //   LOG_INFO("MYTEST: create_sys_table_schemas6");
+  //   // }
+  //   // for (auto thread : threads) {
+  //   //   LOG_INFO("MYTEST: create_sys_table_schemas6", K(thread));
+  //   //   thread->try_wait();
+  //   //   delete thread;
+  //   // }
+  // }
+  // return ret;
+}
+
+int ObDDLService::batch_create_schema_local(uint64_t tenant_id,
+                              ObIArray<ObTableSchema> &table_schemas,
+                              const int64_t begin, const int64_t end)
+{
+  int ret = OB_SUCCESS;
+  const int64_t begin_time = ObTimeUtility::current_time();
+  if (begin < 0 || begin >= end || end > table_schemas.count()) {
+    ret = OB_INVALID_ARGUMENT;
+    LOG_WARN("invalid argument", K(ret), K(begin), K(end), "table count", table_schemas.count());
+  } else {
+    ObDDLOperator ddl_operator(this->get_schema_service(), this->get_sql_proxy());
+    ObMySQLTransaction trans(true);
+    if (OB_FAIL(trans.start(&this->get_sql_proxy(), tenant_id))) {
+      LOG_WARN("start transaction failed", KR(ret));
+    } else {
+      for (int64_t idx = begin;idx < end && OB_SUCC(ret); idx++) {
+        LOG_INFO("MYTEST: batch creating", K(ob_get_origin_thread_name()));
+        ObTableSchema &table = table_schemas.at(idx);
         const ObString *ddl_stmt = NULL;
-        bool need_sync_schema_version = !(ObSysTableChecker::is_sys_table_index_tid(table_id) ||
-                                          is_sys_lob_table(table_id));
+        bool need_sync_schema_version = !(ObSysTableChecker::is_sys_table_index_tid(table.get_table_id()) ||
+                                          is_sys_lob_table(table.get_table_id()));
+        int64_t start_time = ObTimeUtility::current_time();
         if (OB_FAIL(ddl_operator.create_table(table, trans, ddl_stmt,
                                               need_sync_schema_version,
-                                              false /*is_truncate_table*/))) {
-          LOG_WARN("add table schema failed", KR(ret), K(table_id), K(table_name));
+                                              false))) {
+          LOG_WARN("add table schema failed", K(ret),
+              "table_id", table.get_table_id(),
+              "table_name", table.get_table_name());
         } else {
-          LOG_INFO("add table schema succeed", K(i), K(table_id), K(table_name));
+          int64_t end_time = ObTimeUtility::current_time();
+          LOG_INFO("add table schema succeed", K(idx),
+              "table_id", table.get_table_id(),
+              "table_name", table.get_table_name(), "core_table", is_core_table(table.get_table_id()), "cost", end_time-start_time);
         }
       }
-      //return NULL;
-    };
+    }
+    if (trans.is_started()) {
+      const bool is_commit = (OB_SUCCESS == ret);
+      int tmp_ret = trans.end(is_commit);
+      if (OB_SUCCESS != tmp_ret) {
+        LOG_WARN("end trans failed", K(tmp_ret), K(is_commit));
+        ret = (OB_SUCCESS == ret) ? tmp_ret : ret;
+      } else {
+      }
+    }
+  }
 
+  const int64_t now = ObTimeUtility::current_time();
+  LOG_INFO("batch create schema finish", K(ret), "table_count", end - begin, "total_time_used", now - begin_time);
+  //BOOTSTRAP_CHECK_SUCCESS();
+  return ret;
+}
 
-    std::function<void(int, ObTenantBase*, int *)> my_function = my_lambda;
-    std::vector<std::thread> threads;
-    std::vector<int> result;
-    result.resize(thread_num);
-    auto ctx = share::ObTenantEnv::get_tenant();
-    LOG_INFO("MYTEST", K(ctx));
-    my_lambda(0, ctx, &result[0]);
-    // for (int i = 0; i < thread_num; ++i) {
-    //   threads.push_back(std::thread(my_function, i, ctx, &result[i]));
-    // }
-    // for (auto &thread : threads) {
-    //   thread.join();
-    // }
-
-    // int tmp;
-    // my_lambda(0, &tmp);
-    // ret = tmp;
-    // LOG_INFO("MYTEST: create_sys_table_schemas3");
-    // std::vector<ObPThread *> threads;
-    // std::vector<int> result;
-    // result.resize(thread_num);
-    // std::vector<int> thread_id;
-    // thread_id.resize(thread_num);
-    // std::vector<std::vector<void *>> args;
-    // args.resize(thread_num);
-    // void *(*my_function)(void *) = create_sys_table_schemas_sub_function;
-    // LOG_INFO("MYTEST: create_sys_table_schemas4");
-    // for (int i = 0; i < thread_num; ++i) {
-    //   thread_id[i] = i;
-    //   args[i].resize(6);
-    //   args[i][0] = &thread_id[i];
-    //   args[i][1] = &ddl_operator;
-    //   args[i][2] = &trans;
-    //   args[i][3] = &tables;
-    //   args[i][4] = &ret;
-    //   args[i][5] = (void *) share::ObTenantEnv::get_tenant();
-    //   threads.push_back(new ObPThread(my_function, (void *)&args[i]));
-    //   LOG_INFO("MYTEST: create_sys_table_schemas5");
-    //   threads[i]->run1();
-    //   LOG_INFO("MYTEST: create_sys_table_schemas6");
-    // }
-    // for (auto thread : threads) {
-    //   LOG_INFO("MYTEST: create_sys_table_schemas6", K(thread));
-    //   thread->try_wait();
-    //   delete thread;
-    // }
-    #undef thread_num
+int ObDDLService::parallel_create_table_schema(uint64_t tenant_id, ObIArray<ObTableSchema> &table_schemas)
+{
+  int ret = OB_SUCCESS;
+  int64_t begin = 0;
+  int64_t batch_count = table_schemas.count() / 16;
+  const int64_t MAX_RETRY_TIMES = 10;
+  int64_t finish_cnt = 0;
+  std::vector<std::thread> ths;
+  ObCurTraceId::TraceId *cur_trace_id = ObCurTraceId::get_trace_id();
+  for (int64_t i = 0; OB_SUCC(ret) && i < table_schemas.count(); ++i) {
+      if (table_schemas.count() == (i + 1) || (i + 1 - begin) >= batch_count) {
+      std::thread th([&, begin, i, cur_trace_id] () {
+          std::string thread_name = "parallel_create_table_schema" + std::to_string(i);
+          ob_get_origin_thread_name() = thread_name.c_str();
+          int ret = OB_SUCCESS;
+          ObCurTraceId::set(*cur_trace_id);
+          int64_t retry_times = 1;
+          while (OB_SUCC(ret)) {
+          if (OB_FAIL(batch_create_schema_local(tenant_id, table_schemas, begin, i + 1))) {
+              LOG_WARN("batch create schema failed", K(ret), "table count", i + 1 - begin);
+              // bugfix:
+              if (retry_times <= MAX_RETRY_TIMES) {
+              retry_times++;
+              ret = OB_SUCCESS;
+              LOG_INFO("schema error while create table, need retry", KR(ret), K(retry_times));
+              usleep(1 * 1000 * 1000L); // 1s
+              }
+          } else {
+              ATOMIC_AAF(&finish_cnt, i + 1 - begin);
+              break;
+          }
+          }
+          LOG_INFO("worker job", K(begin), K(i), K(i-begin), K(ret));
+      });
+      ths.push_back(std::move(th));
+      if (OB_SUCC(ret)) {
+          begin = i + 1;
+      }
+      }
+  }
+  for (auto &th : ths) {
+      th.join();
+  }
+  if (finish_cnt != table_schemas.count()) {
+      ret = OB_ERR_UNEXPECTED;
+      LOG_WARN("parallel_create_table_schema fail", K(finish_cnt), K(table_schemas.count()), K(ret), K(tenant_id));
   }
   return ret;
 }
@@ -31023,6 +31200,7 @@ int ObDDLService::recompile_view(const ObTableSchema &view_schema, const bool re
       LOG_WARN("failed to update table status", K(ret));
     }
   }
+  LOG_INFO("MYTEST: recompile view");
   return ret;
 }
 

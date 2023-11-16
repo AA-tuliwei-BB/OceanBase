@@ -59,6 +59,7 @@ private:
   uint64_t tenant_id_;
 };
 
+//MY TAG
 class ObMajorMergeScheduler : public ObFreezeReentrantThread
 {
 public:

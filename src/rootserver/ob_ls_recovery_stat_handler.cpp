@@ -152,6 +152,8 @@ int ObLSRecoveryStatHandler::get_ls_level_recovery_stat(ObLSRecoveryStat &ls_rec
   int64_t second_proposal_id = palf::INVALID_PROPOSAL_ID;
   ls_recovery_stat.reset();
 
+  LOG_INFO("start get ls level recovery");
+
   if (OB_FAIL(check_inner_stat_())) {
     LOG_WARN("inner stat error", KR(ret), K_(is_inited));
   } else if (OB_ISNULL(ls_svr)) {
@@ -178,6 +180,7 @@ int ObLSRecoveryStatHandler::get_ls_level_recovery_stat(ObLSRecoveryStat &ls_rec
               K(first_proposal_id), K(second_proposal_id), KPC_(ls));
   }
 
+  LOG_INFO("end get ls level recovery");
   return ret;
 }
 

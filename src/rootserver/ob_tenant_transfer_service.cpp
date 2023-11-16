@@ -104,7 +104,7 @@ void ObTenantTransferService::do_work()
           LOG_WARN("check tenant schema failed", KR(ret), K_(tenant_id), K(tenant_schema_is_ready));
         } else if (!tenant_schema_is_ready) {
           ret = OB_NEED_WAIT;
-          if (REACH_TIME_INTERVAL(10 * 1000 * 1000L)) { // 10s
+          if (REACH_TIME_INTERVAL(1 * 1000 * 1000L)) { // 10s MYCHANGE 1s
             LOG_WARN("tenant schema is not ready, need wait", KR(ret), K_(tenant_id));
           }
         } else if (OB_FAIL(ObTransferTaskOperator::get_all_task_status(
@@ -143,6 +143,7 @@ void ObTenantTransferService::do_work()
       }// end while
     }
   }
+  LOG_INFO("MYTEST: tenant end, transfer service end");
 }
 
 int ObTenantTransferService::process_task_(const ObTransferTask::TaskStatus &task_stat)

@@ -207,6 +207,7 @@ void ObHeartbeatService::do_work()
       }
     } // end while
   }
+  LOG_INFO("MYTEST: tenant end, heartbeat end");
 }
 int ObHeartbeatService::check_upgrade_compat_()
 {

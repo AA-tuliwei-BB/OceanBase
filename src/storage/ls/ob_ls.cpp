@@ -111,6 +111,7 @@ ObLS::~ObLS()
   destroy();
 }
 
+// MYTAG: 严查
 int ObLS::init(const share::ObLSID &ls_id,
                const uint64_t tenant_id,
                const ObMigrationStatus &migration_status,

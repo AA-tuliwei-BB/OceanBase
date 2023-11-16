@@ -71,6 +71,7 @@ void ObStandbySchemaRefreshTrigger::do_work()
       idle(DEFAULT_IDLE_TIME);
     }
   }
+  LOG_INFO("MYTEST: tenant end, refresh trigger end");
 }
 
 void ObStandbySchemaRefreshTrigger::destroy()

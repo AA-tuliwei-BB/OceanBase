@@ -47,6 +47,7 @@ class ObLogHandler;
 
 namespace rootserver
 {
+// MYTAG: TenantThreadHelper
 class ObTenantThreadHelper : public lib::TGRunnable,
   public logservice::ObIRoleChangeSubHandler
 {

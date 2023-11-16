@@ -173,7 +173,7 @@ void ObRecoveryLSService::do_work()
         LOG_WARN("can not do recovery now", KR(ret), K(tenant_id_));
         restore_status_.reset();
       } else if (0 == thread_idx) {
-        idle_time_us = 10 * 1000 * 1000L;
+        idle_time_us = 1 * 1000 * 1000L; // MYCHANGE
         DEBUG_SYNC(STOP_RECOVERY_LS_THREAD0);
         //adjust primary zone and balance ls group
         if (OB_TMP_FAIL(do_standby_balance_())) {
@@ -188,7 +188,7 @@ void ObRecoveryLSService::do_work()
 
         (void)try_tenant_upgrade_end_();
         if (tenant_info.is_standby()) {
-          if (REACH_TENANT_TIME_INTERVAL(10 * 1000 * 1000)) {
+          if (REACH_TENANT_TIME_INTERVAL(1 * 1000 * 1000)) { // MYCHANGE
             (void)try_update_primary_ip_list();
           }
         }
@@ -235,6 +235,8 @@ void ObRecoveryLSService::do_work()
     }//end while
     restore_status_.reset();
   }
+  LOG_INFO("MYTEST: tenant end, recovery end");
+
 }
 
 int ObRecoveryLSService::init_palf_handle_guard_(palf::PalfHandleGuard &palf_handle_guard)

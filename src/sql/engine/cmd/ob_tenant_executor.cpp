@@ -53,6 +53,7 @@ int check_sys_var_options(ObExecContext &ctx,
                           share::schema::ObTenantSchema &tenant_schema,
                           common::ObIArray<obrpc::ObSysVarIdValue> &sys_var_list);
 
+// MYTAG: 注意这里
 int ObCreateTenantExecutor::execute(ObExecContext &ctx, ObCreateTenantStmt &stmt)
 {
   int ret = OB_SUCCESS;

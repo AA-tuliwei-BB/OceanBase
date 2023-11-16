@@ -81,7 +81,7 @@ void ObTenantBalanceService::do_work()
   } else if (OB_FAIL(wait_tenant_schema_and_version_ready_(tenant_id_, DATA_VERSION_4_2_0_0))) {
     LOG_WARN("failed to wait tenant schema version ready", KR(ret), K(tenant_id_), K(DATA_CURRENT_VERSION));
   } else {
-    int64_t idle_time_us = 10 * 1000 * 1000L;
+    int64_t idle_time_us = 1 * 1000 * 1000L; // MYCHANGE
     int tmp_ret = OB_SUCCESS;
     int64_t job_cnt = 0;
     int64_t last_partition_balance_time = ObTimeUtility::current_time();
@@ -139,7 +139,7 @@ void ObTenantBalanceService::do_work()
         idle_time_us = 100 * 1000;
       } else {
         omt::ObTenantConfigGuard tenant_config(TENANT_CONF(tenant_id_));
-        idle_time_us = tenant_config.is_valid() ? tenant_config->balancer_idle_time : 10 * 1000 * 1000;
+        idle_time_us = tenant_config.is_valid() ? tenant_config->balancer_idle_time : 1 * 1000 * 1000; // MYCHANGE
       }
       ISTAT("finish one round", KR(ret), KR(tmp_ret), K_(tenant_id), K(job_cnt),
                 K(primary_zone_num_), K(unit_group_array_),
@@ -151,6 +151,7 @@ void ObTenantBalanceService::do_work()
       idle(idle_time_us);
     }// end while
   }
+  LOG_INFO("MYTEST: tenant end, balance service end");
 }
 
 int ObTenantBalanceService::gather_stat_primary_zone_num_and_units(

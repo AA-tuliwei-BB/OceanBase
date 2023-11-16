@@ -1063,6 +1063,7 @@ int ObCmdExecutor::execute(ObExecContext &ctx, ObICmd &cmd)
     }
   }
 
+  LOG_INFO("MYTEST: execute");
   return ret;
 }
 

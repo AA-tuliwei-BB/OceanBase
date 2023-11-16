@@ -442,6 +442,7 @@ int ObSchemaUtils::add_sys_table_lob_aux_table(
 // construct inner table schemas in tenant space
 int ObSchemaUtils::construct_inner_table_schemas(
     const uint64_t tenant_id,
+    std::vector<int> &tables_group_offset,
     ObIArray<ObTableSchema> &tables)
 {
   int ret = OB_SUCCESS;
@@ -456,6 +457,19 @@ int ObSchemaUtils::construct_inner_table_schemas(
       virtual_table_schema_creators,
       sys_view_schema_creators
     };
+
+    // const schema_create_func *creator_ptr_arrays[] = {
+    //   sys_view_schema_creators,
+    //   virtual_table_schema_creators,
+    //   sys_table_schema_creators,
+    //   core_table_schema_creators,
+    //   all_core_table_schema_creator
+    // };
+
+    // ObSArray<ObTableSchema> index_tables, lob_tables;
+
+    tables_group_offset.clear();
+    tables_group_offset.push_back(0);
     HEAP_VARS_2((ObTableSchema, table_schema), (ObTableSchema, data_schema)) {
       for (int64_t i = 0; OB_SUCC(ret) && i < ARRAYSIZEOF(creator_ptr_arrays); ++i) {
         for (const schema_create_func *creator_ptr = creator_ptr_arrays[i];
@@ -487,8 +501,18 @@ int ObSchemaUtils::construct_inner_table_schemas(
             }
           } // end lob aux table
         }
+        tables_group_offset.push_back(int(tables.count()));
       }
     }
+
+    LOG_INFO("MYTEST: tables", K(tables.count()));
+
+    // for (int i = 0; i < index_tables.count(); ++i) {
+    //   tables.push_back(index_tables[i]);
+    // }
+    // for (int i = 0; i < lob_tables.count(); ++i) {
+    //   tables.push_back(lob_tables[i]);
+    // }
   }
   return ret;
 }

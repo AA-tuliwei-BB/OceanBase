@@ -2032,6 +2032,7 @@ private:
   int init_tenant_schema(
       const uint64_t tenant_id,
       const share::schema::ObTenantSchema &tenant_schema,
+      std::vector<int> &tables_group_offset,
       const share::ObTenantRole &tenant_role,
       const share::SCN &recovery_until_scn,
       common::ObIArray<share::schema::ObTableSchema> &tables,
@@ -2048,10 +2049,21 @@ private:
       const ObString &tenant_name,
       const share::ObTenantRole &tenant_role);
   //void *create_sys_table_schemas_sub_function(void *);
+
   int create_sys_table_schemas(
-      ObDDLOperator &ddl_operator,
-      ObMySQLTransaction &trans,
+    //   int thread_id,
+    //   int mode,
+    //   std::vector<int> &tables_group_offset,
+    //   ObDDLOperator &ddl_operator,
+    //   ObMySQLTransaction &trans,
       common::ObIArray<share::schema::ObTableSchema> &tables);
+
+  int batch_create_schema_local(uint64_t tenant_id,
+                                ObIArray<ObTableSchema> &table_schemas,
+                                const int64_t begin, const int64_t end);
+
+  int parallel_create_table_schema(uint64_t tenant_id, ObIArray<ObTableSchema> &table_schemas);
+
   int try_force_drop_tenant(const share::schema::ObTenantSchema &tenant_schema);
 
   int handle_security_audit_in_trans(const share::schema::ObSAuditSchema &audit_schema,
