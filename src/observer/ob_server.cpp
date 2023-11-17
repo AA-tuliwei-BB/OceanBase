@@ -802,6 +802,7 @@ int ObServer::start_sig_worker_and_handle()
   return ret;
 }
 
+// MYTAG: 找到你了！
 int ObServer::start()
 {
   int ret = OB_SUCCESS;

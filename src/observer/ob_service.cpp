@@ -1512,6 +1512,8 @@ int ObService::is_empty_server(const obrpc::ObCheckServerEmptyArg &arg, obrpc::B
   }
   return ret;
 }
+
+//MYTAG: rs_list好像就是传到这里，严查
 int ObService::check_server_for_adding_server(
     const obrpc::ObCheckServerForAddingServerArg &arg,
     obrpc::ObCheckServerForAddingServerResult &result)

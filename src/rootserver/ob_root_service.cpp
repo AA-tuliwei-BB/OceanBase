@@ -1755,7 +1755,8 @@ int ObRootService::update_rslist()
   if (OB_FAIL(task.init(*lst_operator_, addr_agent_,
                         zone_manager_, broadcast_rs_list_lock_, force_update, self_addr_))) {
     LOG_WARN("task init failed", K(ret), K(force_update));
-  } else if (OB_FAIL(task.process_without_lock())) {
+  }
+  if (OB_FAIL(task.process_without_lock())) {
     LOG_WARN("failed to update rslist", K(ret));
   } else {
     LOG_INFO("broadcast root address succeed");
@@ -5118,17 +5119,17 @@ int ObRootService::do_restart()
 
   // broadcast root server address again, this task must be in the end part of do_restart,
   // because system may work properly without it.
-  if (FAILEDx(update_rslist())) {
-    FLOG_WARN("broadcast root address failed but ignored", KR(ret));
+  // if (FAILEDx(update_rslist())) {
+  //   FLOG_WARN("broadcast root address failed but ignored", KR(ret));
     // it's ok ret be overwritten, update_rslist_task will retry until succeed
     if (OB_FAIL(submit_update_rslist_task(true))) {
       FLOG_WARN("submit_update_rslist_task failed", KR(ret));
     } else {
       FLOG_INFO("submit_update_rslist_task succeed");
     }
-  } else {
-    FLOG_INFO("broadcast root address succeed");
-  }
+  // } else {
+  //   FLOG_INFO("broadcast root address succeed");
+  // }
 
   if (FAILEDx(report_single_replica(tenant_id, SYS_LS))) {
     FLOG_WARN("report all_core_table replica failed, but ignore",

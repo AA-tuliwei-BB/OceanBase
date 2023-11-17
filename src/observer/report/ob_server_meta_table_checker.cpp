@@ -114,6 +114,7 @@ int ObServerMetaTableChecker::init(
 
 int ObServerMetaTableChecker::start()
 {
+  LOG_INFO("MYTEST: MetaTableChecker start");
   int ret = OB_SUCCESS;
   if (OB_UNLIKELY(!inited_)) {
     ret = OB_NOT_INIT;
