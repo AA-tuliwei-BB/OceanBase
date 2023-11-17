@@ -769,6 +769,8 @@ int ObRootService::fake_init(ObServerConfig &config,
   LOG_INFO("init rootservice", K(ret));
   return ret;
 }
+
+//MYTAG: rootservice init
 int ObRootService::init(ObServerConfig &config,
                         ObConfigManager &config_mgr,
                         ObSrvRpcProxy &srv_rpc_proxy,

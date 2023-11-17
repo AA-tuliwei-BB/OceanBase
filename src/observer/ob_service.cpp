@@ -1400,6 +1400,7 @@ int ObService::broadcast_consensus_version(
   return OB_SUCCESS;
 }
 
+// MYTAG: 注意这里
 int ObService::bootstrap(const obrpc::ObBootstrapArg &arg)
 {
   int ret = OB_SUCCESS;

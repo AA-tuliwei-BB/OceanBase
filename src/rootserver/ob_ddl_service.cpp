@@ -22751,6 +22751,7 @@ int ObDDLService::create_tenant_sys_ls(
       LOG_WARN("fail to create tenant sys ls", KR(ret), K(pool_list), K(palf_base_info),
                K(locality), K(paxos_replica_num), K(tenant_schema), K(zone_priority));
     } else {
+      LOG_INFO("[CREATE_TENANT] STEP 2.1.1 before LSLeaderElection");
       share::ObLSLeaderElectionWaiter ls_leader_waiter(*lst_operator_, stopped_);
       int64_t timeout = GCONF.rpc_timeout;
       if (INT64_MAX != THIS_WORKER.get_timeout_ts()) {
