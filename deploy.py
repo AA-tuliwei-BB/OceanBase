@@ -117,7 +117,8 @@ if __name__ == "__main__":
     __build_env(home_abs_path)
 
     rootservice = f'{args.ip}:{args.rpc_port}'
-    observer_args = f"-p {args.mysql_port} -P {args.rpc_port} -z {args.zone} -c {args.cluster_id} -d {data_abs_path} -i {args.devname} -r {rootservice} -I {args.ip} -o {args.opt_str}"
+    ob_r = f'{args.ip}:{args.rpc_port}:{args.mysql_port}'
+    observer_args = f"-p {args.mysql_port} -P {args.rpc_port} -z {args.zone} -c {args.cluster_id} -d {data_abs_path} -i {args.devname} -r {ob_r} -I {args.ip} -o {args.opt_str}"
 
     os.chdir(args.cluster_home_path)
     observer_cmd = f"{bin_abs_path} {observer_args}"
@@ -132,6 +133,7 @@ if __name__ == "__main__":
         _logger.info(f'connect to server success! host={args.ip}, port={args.mysql_port}')
 
         bootstrap_begin = datetime.datetime.now()
+        print(f"ALTER SYSTEM BOOTSTRAP ZONE '{args.zone}' SERVER '{rootservice}'")
         cursor.execute(f"ALTER SYSTEM BOOTSTRAP ZONE '{args.zone}' SERVER '{rootservice}'")
         bootstrap_end = datetime.datetime.now()
         _logger.info('bootstrap success: %s ms' % ((bootstrap_end - bootstrap_begin).total_seconds() * 1000))
