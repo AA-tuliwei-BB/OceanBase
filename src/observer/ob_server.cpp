@@ -1009,7 +1009,7 @@ int ObServer::start()
     while (OB_SUCC(ret) && !stop_ && !synced) {
       synced = multi_tenant_.has_synced();
       if (!synced) {
-        SLEEP(1);
+        USLEEP(200 * 1000);
       }
     }
     FLOG_INFO("check if multi tenant synced", KR(ret), K(stop_), K(synced));
