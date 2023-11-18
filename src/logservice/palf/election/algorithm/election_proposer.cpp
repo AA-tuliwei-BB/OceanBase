@@ -301,7 +301,7 @@ int ElectionProposer::start()
   #define PRINT_WRAPPER K(*this)
   ELECT_TIME_GUARD(500_ms);
   int ret = OB_SUCCESS;
-  if (CLICK_FAIL(reschedule_or_register_prepare_task_after_(3_s))) {
+  if (CLICK_FAIL(reschedule_or_register_prepare_task_after_(1200_ms))) {
     LOG_INIT(ERROR, "first time register devote task failed");
   } else if (CLICK_FAIL(register_renew_lease_task_())) {
     LOG_INIT(ERROR, "first time register renew lease task failed");
