@@ -176,7 +176,7 @@ int ObReentrantThread::blocking_run()
       if (!created_) {
         break;
       }
-      static const int64_t WAIT_TIME_MS = 3000;
+      static const int64_t WAIT_TIME_MS = 300;
       if (stop_) {
         if (ThreadPool::has_set_stop()) {
           break;

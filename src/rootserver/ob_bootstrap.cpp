@@ -1063,7 +1063,7 @@ int ObBootstrap::parallel_create_table_schema(uint64_t tenant_id, ObDDLService &
 {
   int ret = OB_SUCCESS;
   int64_t begin = 0;
-  int64_t batch_count = table_schemas.count() / 16;
+  int64_t batch_count = table_schemas.count() / 32;
   ObTenantBase *ctx=nullptr;
   const int64_t MAX_RETRY_TIMES = 10;
   int64_t finish_cnt = 0;
@@ -1088,7 +1088,7 @@ std::vector<std::thread> ths;
               retry_times++;
               ret = OB_SUCCESS;
               LOG_INFO("schema error while create table, need retry", KR(ret), K(retry_times));
-              usleep(1 * 1000 * 1000L); // 1s
+              usleep(200 * 1000L); // 1s
             }
           } else {
             ATOMIC_AAF(&finish_cnt, i + 1 - begin);
@@ -1262,7 +1262,7 @@ int ObBootstrap::add_servers_in_rs_list(rootserver::ObServerZoneOpService &serve
 int ObBootstrap::wait_all_rs_in_service()
 {
   int ret = OB_SUCCESS;
-  const int64_t check_interval = 200 * 1000;
+  const int64_t check_interval = 100 * 1000;
   int64_t left_time_can_sleep = WAIT_RS_IN_SERVICE_TIMEOUT_US;
   if (OB_FAIL(check_inner_stat())) {
     LOG_WARN("check_inner_stat failed", K(ret));

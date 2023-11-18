@@ -1018,7 +1018,7 @@ int ObServer::start()
     while (OB_SUCC(ret) && !stop_ && !schema_ready) {
       schema_ready = schema_service_.is_sys_full_schema();
       if (!schema_ready) {
-        SLEEP(1);
+        USLEEP(100 * 1000); // MYTAG: modify here
       }
     }
     FLOG_INFO("check if schema ready", KR(ret), K(stop_), K(schema_ready));
@@ -1032,7 +1032,7 @@ int ObServer::start()
     while (OB_SUCC(ret) && !stop_ && !timezone_usable) {
       timezone_usable = tenant_timezone_mgr_.is_usable();
       if (!timezone_usable) {
-        SLEEP(1);
+        USLEEP(100 * 1000); // MYTAG: modify here
       }
     }
     FLOG_INFO("check if timezone usable", KR(ret), K(stop_), K(timezone_usable));
