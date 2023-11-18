@@ -31,7 +31,7 @@ do {\
   if (ATOMIC_LOAD(&INIT_TS) < 0) {\
     ELECT_LOG_RET(ERROR, common::OB_ERROR, "INIT_TS is less than 0, may not call GLOBAL_INIT_ELECTION_MODULE yet!", K(*this));\
     return;\
-  } else if (OB_UNLIKELY(get_monotonic_ts() < ATOMIC_LOAD(&INIT_TS) + MAX_LEASE_TIME)) {\
+  } else if (OB_UNLIKELY(get_monotonic_ts() < ATOMIC_LOAD(&INIT_TS) + MAX_LEASE_TIME - 7_s)) {\
     ELECT_LOG(INFO, "keep silence for safty, won't send response", K(*this));\
     return;\
   }\
