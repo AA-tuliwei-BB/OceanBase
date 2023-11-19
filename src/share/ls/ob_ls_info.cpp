@@ -972,6 +972,7 @@ int ObLSInfo::composite_with(const ObLSInfo &other)
 // TODO: make sure the actions of this function
 int ObLSInfo::update_replica_status()
 {
+  LOG_INFO("MYTEST: update_replica_status");
   int ret = OB_SUCCESS;
   if (!is_valid()) {
     ret = OB_INVALID_ARGUMENT;

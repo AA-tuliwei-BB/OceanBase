@@ -1088,7 +1088,7 @@ std::vector<std::thread> ths;
               retry_times++;
               ret = OB_SUCCESS;
               LOG_INFO("schema error while create table, need retry", KR(ret), K(retry_times));
-              usleep(200 * 1000L); // 1s
+              ob_usleep(200 * 1000L); // 1s
             }
           } else {
             ATOMIC_AAF(&finish_cnt, i + 1 - begin);
