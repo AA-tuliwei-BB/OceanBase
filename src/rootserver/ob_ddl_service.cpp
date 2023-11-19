@@ -23307,7 +23307,7 @@ int ObDDLService::create_sys_table_schemas(
     // ObMySQLTransaction &trans,
     common::ObIArray<ObTableSchema> &tables)
 {
-  LOG_INFO("MYTEST: create_sys_table_schemas", K(share::ObTenantEnv::get_tenant()));
+  // LOG_INFO("MYTEST: create_sys_table_schemas", K(share::ObTenantEnv::get_tenant()));
   int ret = OB_SUCCESS;
   if (OB_FAIL(check_inner_stat())) {
     LOG_WARN("variable is not init", KR(ret));
@@ -23433,7 +23433,7 @@ int ObDDLService::batch_create_schema_local(uint64_t tenant_id,
       LOG_WARN("start transaction failed", KR(ret));
     } else {
       for (int64_t idx = begin;idx < end && OB_SUCC(ret); idx++) {
-        LOG_INFO("MYTEST: batch creating", K(ob_get_origin_thread_name()));
+        // LOG_INFO("MYTEST: batch creating", K(ob_get_origin_thread_name()));
         ObTableSchema &table = table_schemas.at(idx);
         const ObString *ddl_stmt = NULL;
         bool need_sync_schema_version = !(ObSysTableChecker::is_sys_table_index_tid(table.get_table_id()) ||
@@ -23474,7 +23474,7 @@ int ObDDLService::parallel_create_table_schema(uint64_t tenant_id, ObIArray<ObTa
 {
   int ret = OB_SUCCESS;
   int64_t begin = 0;
-  int64_t batch_count = table_schemas.count() / 32;
+  int64_t batch_count = table_schemas.count() / 16;
   const int64_t MAX_RETRY_TIMES = 10;
   int64_t finish_cnt = 0;
   std::vector<std::thread> ths;

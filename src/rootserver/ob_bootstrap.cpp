@@ -709,10 +709,10 @@ int ObBootstrap::prepare_create_partition(
   }
 
   if (OB_SUCC(ret)) {
-    LOG_INFO("succeed prepare create table partition",
-             "table_id", tschema.get_table_id(),
-             "table_name", tschema.get_table_name(),
-             "cluster_role", cluster_role_to_str(arg_.cluster_role_));
+    // LOG_INFO("succeed prepare create table partition",
+    //          "table_id", tschema.get_table_id(),
+    //          "table_name", tschema.get_table_name(),
+    //          "cluster_role", cluster_role_to_str(arg_.cluster_role_));
   }
 
   BOOTSTRAP_CHECK_SUCCESS();
@@ -1063,7 +1063,7 @@ int ObBootstrap::parallel_create_table_schema(uint64_t tenant_id, ObDDLService &
 {
   int ret = OB_SUCCESS;
   int64_t begin = 0;
-  int64_t batch_count = table_schemas.count() / 32;
+  int64_t batch_count = table_schemas.count() / 16;
   ObTenantBase *ctx=nullptr;
   const int64_t MAX_RETRY_TIMES = 10;
   int64_t finish_cnt = 0;
