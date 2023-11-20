@@ -461,6 +461,7 @@ int ObDDLService::create_user_tables(
     LOG_WARN("create_tables_in_trans failed", K(ret));
   }
 
+  // MYTAG 搞清楚publish_schema是干嘛的
   RS_TRACE(public_schema_begin);
   if (OB_SUCC(ret)) {
     DEBUG_SYNC(CREATE_TABLE_BEFORE_PUBLISH_SCHEMA);

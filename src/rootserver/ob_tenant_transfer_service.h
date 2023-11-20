@@ -228,7 +228,7 @@ private:
       const share::ObTransferTaskID &task_id,
       const share::ObTransferTaskComment &result_comment);
 private:
-  static const int64_t IDLE_TIME_US = 10 * 1000 * 1000L; // 10s
+  static const int64_t IDLE_TIME_US = 1 * 1000 * 1000L; // 10s
   static const int64_t BUSY_IDLE_TIME_US = 100 * 1000L; // 100ms
   static const int64_t PART_COUNT_IN_A_TRANSFER = 100;
   static const int64_t TABLET_COUNT_THRESHOLD_IN_A_TRANSFER = 100;

@@ -3043,6 +3043,7 @@ int ObRootService::parallel_create_table(const ObCreateTableArg &arg, ObCreateTa
   return ret;
 }
 
+//MYTAG: 研究create_table的用法
 int ObRootService::create_table(const ObCreateTableArg &arg, ObCreateTableRes &res)
 {
   LOG_DEBUG("receive create table arg", K(arg));

@@ -31,7 +31,7 @@ do {\
   if (ATOMIC_LOAD(&INIT_TS) < 0) {\
     ELECT_LOG_RET(ERROR, common::OB_ERROR, "INIT_TS is less than 0, may not call GLOBAL_INIT_ELECTION_MODULE yet!", K(*this));\
     return;\
-  } else if (OB_UNLIKELY(get_monotonic_ts() < ATOMIC_LOAD(&INIT_TS) + 300_ms /*MAX_LEASE_TIME - 9_s*/)) {\
+  } else if (OB_UNLIKELY(get_monotonic_ts() < ATOMIC_LOAD(&INIT_TS) + 50_ms /*MAX_LEASE_TIME - 9_s*/)) {\
     ELECT_LOG(INFO, "keep silence for safty, won't send response", K(*this));\
     return;\
   }\
@@ -122,7 +122,7 @@ int ElectionAcceptor::start()
   bool last_record_lease_valid_state = false;
   int ret = OB_SUCCESS;
   return p_election_->timer_->schedule_task_repeat(time_window_task_handle_,
-                                                   250_ms,
+                                                   100_ms,
                                                    [this,
                                                     last_record_lease_owner,
                                                     last_record_lease_valid_state]() mutable {

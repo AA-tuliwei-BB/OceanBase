@@ -301,7 +301,7 @@ int ElectionProposer::start()
   #define PRINT_WRAPPER K(*this)
   ELECT_TIME_GUARD(500_ms);
   int ret = OB_SUCCESS;
-  if (CLICK_FAIL(reschedule_or_register_prepare_task_after_(600_ms))) {
+  if (CLICK_FAIL(reschedule_or_register_prepare_task_after_(100_ms))) {
     LOG_INIT(ERROR, "first time register devote task failed");
   } else if (CLICK_FAIL(register_renew_lease_task_())) {
     LOG_INIT(ERROR, "first time register renew lease task failed");
@@ -330,6 +330,7 @@ void ElectionProposer::prepare(const ObRole role)
   #define PRINT_WRAPPER KR(ret), K(role), K(*this)
   int ret = OB_SUCCESS;
   int64_t cur_ts = ObClockGenerator::getCurrentTime();
+  LOG_PHASE(INFO, phase, "do prepare", K(memberlist_with_states_.get_member_list().get_addr_list().count()));
   LogPhase phase = role == ObRole::LEADER ? LogPhase::RENEW_LEASE : LogPhase::ELECT_LEADER;
   if (memberlist_with_states_.get_member_list().get_addr_list().empty()) {
     LOG_PHASE(INFO, phase, "memberlist is empty, give up do prepare this time");
@@ -559,6 +560,7 @@ void ElectionProposer::on_accept_response(const ElectionAcceptResponseMsg &accep
   }
   // 5. 检查follower的优先级是否高于Leader，尝试触发切主
   if (role_ == ObRole::LEADER && accept_res.get_sender() != p_election_->self_addr_) {
+    LOG_ELECT_LEADER(INFO, "MYTEST: step5");
     ObStringHolder higher_than_leader_reason;
     ObStringHolder higher_than_cached_msg_reason;
     (void) p_election_->refresh_priority_();
