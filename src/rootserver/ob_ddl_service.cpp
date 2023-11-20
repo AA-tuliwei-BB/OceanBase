@@ -23496,7 +23496,7 @@ int ObDDLService::parallel_create_table_schema(uint64_t tenant_id, ObIArray<ObTa
               retry_times++;
               ret = OB_SUCCESS;
               LOG_INFO("schema error while create table, need retry", KR(ret), K(retry_times));
-              ob_usleep(200 * 1000L);
+              ob_usleep(150 * 1000L);
               // usleep(1 * 200 * 1000L); // 1s
               }
           } else {

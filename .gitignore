@@ -349,3 +349,21 @@ test/var
 ############# perf #############
 perf.data
 perf.data.old
+
+############# llvm #############
+clang+llvm-11.1.0-x86_64-linux-gnu-ubuntu-16.04
+
+############# cmake ############
+cmake
+############# cmake ############
+cmake-3.20.0-linux-x86_64
+
+clang+llvm-11.1.0-x86_64-linux-gnu-ubuntu-16.04.tar.xz
+
+cmake-3.20.0-linux-x86_64.tar.gz
+
+clean.sh
+flamegraph.sh
+my_build.sh
+run.sh
+perf.*
