@@ -367,3 +367,6 @@ flamegraph.sh
 my_build.sh
 run.sh
 perf.*
+
+copy_log.sh
+my_deploy.sh
