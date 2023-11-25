@@ -450,21 +450,21 @@ int ObSchemaUtils::construct_inner_table_schemas(
     ret = OB_INVALID_ARGUMENT;
     LOG_WARN("invalid tenant id", KR(ret), K(tenant_id));
   } else {
+    // const schema_create_func *creator_ptr_arrays[] = {
+    //   all_core_table_schema_creator,
+    //   core_table_schema_creators,
+    //   sys_table_schema_creators,
+    //   virtual_table_schema_creators,
+    //   sys_view_schema_creators
+    // };
+
     const schema_create_func *creator_ptr_arrays[] = {
       all_core_table_schema_creator,
       core_table_schema_creators,
-      sys_table_schema_creators,
+      sys_view_schema_creators,
       virtual_table_schema_creators,
-      sys_view_schema_creators
+      sys_table_schema_creators,
     };
-
-    // const schema_create_func *creator_ptr_arrays[] = {
-    //   sys_view_schema_creators,
-    //   virtual_table_schema_creators,
-    //   sys_table_schema_creators,
-    //   core_table_schema_creators,
-    //   all_core_table_schema_creator
-    // };
 
     // ObSArray<ObTableSchema> index_tables, lob_tables;
 

@@ -180,6 +180,10 @@ private:
 
       static int parallel_create_table_schema(
       uint64_t tenant_id, ObDDLService &ddl_service, ObIArray<ObTableSchema> &table_schemas);
+
+      static int safe_parallel_create_table_schema(
+      uint64_t tenant_id, ObDDLService &ddl_service, ObIArray<ObTableSchema> &table_schemas);
+
   virtual int check_is_already_bootstrap(bool &is_bootstrap);
   virtual int init_global_stat();
   virtual int init_sequence_id();

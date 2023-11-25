@@ -26,6 +26,7 @@ void usage(const char* progname)
     exit(-1);                                   \
   }
 
+// MYTAG
 // use the following DDL to create a table for testing
 // create table t2 (c1 varbinary(32), c2 varchar(32), c3 bigint, v1 varbinary(64), v2 bigint, primary key(c1, c2, c3)) partition by key(c1) partitions 16;
 void get_row_and_print(ObTable *table, ObRowkey &rk);

@@ -1064,7 +1064,7 @@ int ObBootstrap::parallel_create_table_schema(uint64_t tenant_id, ObDDLService &
 {
   int ret = OB_SUCCESS;
   int64_t begin = 0;
-  int64_t batch_count = table_schemas.count() / 16;
+  int64_t batch_count = table_schemas.count() / 32;
   ObTenantBase *ctx=nullptr;
   const int64_t MAX_RETRY_TIMES = 10;
   int64_t finish_cnt = 0;
@@ -1073,7 +1073,14 @@ std::vector<std::thread> ths;
   ctx=share::ObTenantEnv::get_tenant();
   ObCurTraceId::TraceId *cur_trace_id = ObCurTraceId::get_trace_id();
   for (int64_t i = 0; OB_SUCC(ret) && i < table_schemas.count(); ++i) {
+    // if (table_schemas.count() != (i + 1) && (table_schemas.at(i + 1).is_index_table() || table_schemas.at(i + 1).is_aux_lob_table())) {
+    //   ++i;
+    //   continue;
+    // }
     if (table_schemas.count() == (i + 1) || (i + 1 - begin) >= batch_count) {
+      // if (table_schemas.count() == 257) {
+      //   LOG_INFO("MYTEST: create thread");
+      // }
       std::thread th([&, begin, i, cur_trace_id] () {
         std::string thread_name = "parallel_create_table_schema"+ std::to_string(i);
         ob_get_origin_thread_name()=thread_name.c_str();
@@ -1086,9 +1093,9 @@ std::vector<std::thread> ths;
             LOG_WARN("batch create schema failed", K(ret), "table count", i + 1 - begin);
             // bugfix:
             if (retry_times <= MAX_RETRY_TIMES) {
+              LOG_INFO("schema error while create table, need retry", KR(ret), K(retry_times));
               retry_times++;
               ret = OB_SUCCESS;
-              LOG_INFO("schema error while create table, need retry", KR(ret), K(retry_times));
               ob_usleep(200 * 1000L); // 1s
             }
           } else {
@@ -1114,6 +1121,67 @@ std::vector<std::thread> ths;
   return ret;
 }
 
+int ObBootstrap::safe_parallel_create_table_schema(uint64_t tenant_id, ObDDLService &ddl_service, ObIArray<ObTableSchema> &table_schemas)
+{
+  int ret = OB_SUCCESS;
+  int64_t begin = 0;
+  int64_t batch_count = table_schemas.count() / 128;
+  const int64_t MAX_RETRY_TIMES = 10;
+  int64_t finish_cnt = 0;
+  std::vector<std::thread> ths;
+  ObCurTraceId::TraceId *cur_trace_id = ObCurTraceId::get_trace_id();
+  // 确保core表在数组前面
+  LOG_INFO("MYTEST: parallel_create_talbe: start create");
+  // for (int64_t i = 0; OB_SUCC(ret) && i < table_schemas.count(); ++i) {
+  //   if (!is_core_table(table_schemas.at(i).get_table_id())) {
+  //     begin = i;
+  //     break;
+  //   }
+  // }
+  // if (OB_FAIL(batch_create_schema_local(tenant_id, ddl_service, table_schemas, 0, begin))) {
+  //   LOG_WARN("fail to create core schemas");
+  // }
+  // LOG_INFO("MYTEST: parallel_create_talbe: core created");
+  ObSArray<ObTableSchema> sp_schemas;
+  for (int64_t i = 0; OB_SUCC(ret) && i < table_schemas.count(); ++i) {
+    if (!table_schemas.at(i).is_index_table() && !table_schemas.at(i).is_aux_lob_table()) {
+      if (OB_FAIL(sp_schemas.push_back(table_schemas.at(i)))) {
+        LOG_WARN("error when push_back to sp_schemas");
+      }
+    }
+  }
+  if (OB_FAIL(parallel_create_table_schema(tenant_id, ddl_service, sp_schemas))) {
+    LOG_WARN("fail to create base tables");
+  }
+  LOG_INFO("MYTEST: parallel_create_talbe: base created");
+  sp_schemas.reset();
+  for (int64_t i = 0; OB_SUCC(ret) && i < table_schemas.count(); ++i) {
+    if (table_schemas.at(i).is_index_table() || table_schemas.at(i).is_aux_lob_meta_table()) {
+      if (OB_FAIL(sp_schemas.push_back(table_schemas.at(i)))) {
+        LOG_WARN("error when push_back to sp_schemas");
+      }
+    }
+  }
+  if (OB_FAIL(parallel_create_table_schema(tenant_id, ddl_service, sp_schemas))) {
+    LOG_WARN("fail to create index and lob_meta tables");
+  }
+  LOG_INFO("MYTEST: parallel_create_talbe: index and lob_meta created");
+  sp_schemas.reset();
+  for (int64_t i = 0; OB_SUCC(ret) && i < table_schemas.count(); ++i) {
+    if (table_schemas.at(i).is_aux_lob_piece_table()) {
+      if (OB_FAIL(sp_schemas.push_back(table_schemas.at(i)))) {
+        LOG_WARN("error when push_back to sp_schemas");
+      }
+    }
+  }
+  if (OB_FAIL(parallel_create_table_schema(tenant_id, ddl_service, sp_schemas))) {
+    LOG_WARN("fail to create lob_piece tables", KR(ret));
+  }
+  LOG_INFO("MYTEST: parallel_create_talbe: lob_piece created");
+
+  return ret;
+}
+
 int ObBootstrap::create_all_schema(ObDDLService &ddl_service,
                                    ObIArray<ObTableSchema> &table_schemas)
 {
@@ -1136,7 +1204,7 @@ int ObBootstrap::create_all_schema(ObDDLService &ddl_service,
       }
     }
     if (OB_FAIL(ret)) {
-    } else if (OB_FAIL(parallel_create_table_schema(OB_SYS_TENANT_ID, ddl_service, table_schemas))) {
+    } else if (OB_FAIL(safe_parallel_create_table_schema(OB_SYS_TENANT_ID, ddl_service, table_schemas))) {
       LOG_WARN("create_all_schema", K(ret));
     }
   }
@@ -1144,9 +1212,6 @@ int ObBootstrap::create_all_schema(ObDDLService &ddl_service,
            "time_used", ObTimeUtility::current_time() - begin_time);
   return ret;
 }
-
-
-
 
 int ObBootstrap::batch_create_schema(ObDDLService &ddl_service,
                                      ObIArray<ObTableSchema> &table_schemas,
