@@ -1068,7 +1068,7 @@ int ObBootstrap::parallel_create_table_schema(uint64_t tenant_id, ObDDLService &
   ObCurTraceId::TraceId *cur_trace_id = ObCurTraceId::get_trace_id();
 
   int64_t atomic_current_table = 0;
-  for (int i = 0; i < 16; ++i) {
+  for (int i = 0; i < 8; ++i) {
         std::thread th([&, i, cur_trace_id] () {
           const int64_t thread_start_time = ObTimeUtility::current_time();
           std::string thread_name = "parallel_create_table_schema" + std::to_string(i);

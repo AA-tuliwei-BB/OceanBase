@@ -23477,9 +23477,10 @@ int ObDDLService::parallel_create_table_schema(uint64_t tenant_id, ObIArray<ObTa
   int64_t finish_cnt = 0;
   std::vector<std::thread> ths;
   ObCurTraceId::TraceId *cur_trace_id = ObCurTraceId::get_trace_id();
+  int tmp = 0;
 
-  int64_t atomic_current_table = 0;
-  for (int i = 0; i < 16; ++i) {
+  int64_t atomic_current_table = 0, created_table = 0;
+  for (int i = 0; i < 8; ++i) {
         std::thread th([&, i, cur_trace_id] () {
           const int64_t thread_start_time = ObTimeUtility::current_time();
           std::string thread_name = "parallel_create_table_schema" + std::to_string(i);
@@ -23510,6 +23511,7 @@ int ObDDLService::parallel_create_table_schema(uint64_t tenant_id, ObIArray<ObTa
                        table.get_table_id(), "table_name",
                        table.get_table_name());
             } else {
+              ATOMIC_AAF(&created_table, 1);
               int64_t end_time = ObTimeUtility::current_time();
               LOG_INFO("add table schema succeed", K(idx), "table_id",
                        table.get_table_id(), "table_name",
@@ -23530,17 +23532,22 @@ int ObDDLService::parallel_create_table_schema(uint64_t tenant_id, ObIArray<ObTa
             }
           }
 
-          LOG_INFO("worker job", K(i), K(ret));
-          LOG_INFO("MYTEST: parallel create_table",
-                "cost", ObTimeUtility::current_time() - thread_start_time,
-                K(create_table_time)
-          );
+          if (OB_FAIL(ret)) {
+            LOG_WARN("MYTEST: parallel create_table something goes wrong");
+          } else {
+            LOG_INFO("MYTEST: parallel create_table",
+                  "cost", ObTimeUtility::current_time() - thread_start_time,
+                  K(create_table_time)
+            );
+          }
         });
         ths.push_back(std::move(th));
   }
   for (auto &th : ths) {
       th.join();
   }
+  LOG_INFO("MYTEST: tmp", K(tmp));
+  LOG_INFO("MYTEST: parallel create_table", K(atomic_current_table), K(table_schemas.count()), K(created_table));
   LOG_INFO("MYTEST: parallel create_table, finished");
   return ret;
 }
@@ -23568,6 +23575,7 @@ int ObDDLService::safe_parallel_create_table_schema(uint64_t tenant_id, ObIArray
       LOG_WARN("fail to create core schemas");
     }
   });
+  core_table_thread.join();
   LOG_INFO("MYTEST: parallel_create_talbe: core created");
   ObSArray<ObTableSchema> sp_schemas;
   int total_count = 0;
@@ -23597,7 +23605,6 @@ int ObDDLService::safe_parallel_create_table_schema(uint64_t tenant_id, ObIArray
     LOG_WARN("fail to create index and lob tables");
   }
   LOG_INFO("MYTEST: parallel_create_talbe: index and lob_meta created");
-  core_table_thread.join();
 
   LOG_INFO("MYTEST: safe_parallel_create_table finish", K(table_schemas.count()), K(total_count));
 
