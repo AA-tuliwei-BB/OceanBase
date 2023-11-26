@@ -1064,60 +1064,78 @@ int ObBootstrap::parallel_create_table_schema(uint64_t tenant_id, ObDDLService &
 {
   int ret = OB_SUCCESS;
   int64_t begin = 0;
-  int64_t batch_count = table_schemas.count() / 24;
-  ObTenantBase *ctx=nullptr;
+  int64_t batch_count = 16;// table_schemas.count() / 24;
   const int64_t MAX_RETRY_TIMES = 10;
   int64_t finish_cnt = 0;
-
-std::vector<std::thread> ths;
-  ctx=share::ObTenantEnv::get_tenant();
+  std::vector<std::thread> ths;
   ObCurTraceId::TraceId *cur_trace_id = ObCurTraceId::get_trace_id();
+  // 确保core表在数组前面
+  // for (int64_t i = 0; OB_SUCC(ret) && i < table_schemas.count(); ++i) {
+  //   if (!is_core_table(table_schemas.at(i).get_table_id())) {
+  //     begin = i;
+  //     break;
+  //   }
+  // }
+  // if (OB_FAIL(batch_create_schema_local(tenant_id, table_schemas, 0, begin))) {
+  //   LOG_WARN("fail to create core schemas");
+  // }
+
+  // 洗牌，但是洗的好像不太干净
+  // for (int64_t i = 0; OB_SUCC(ret) && i < table_schemas.count(); ++i) {
+  //   int other = i + rand() % (table_schemas.count() - i);
+  //   // std::swap(table_schemas.at(i), table_schemas.at(other));
+  //   ObTableSchema tmp;
+  //   tmp.assign(table_schemas.at(i));
+  //   table_schemas.at(i).assign(table_schemas.at(other));
+  //   table_schemas.at(other).assign(tmp);
+  // }
+
+  sem_t sem;
+  sem_init(&sem, 0, 16);
   for (int64_t i = 0; OB_SUCC(ret) && i < table_schemas.count(); ++i) {
-    // if (table_schemas.count() != (i + 1) && (table_schemas.at(i + 1).is_index_table() || table_schemas.at(i + 1).is_aux_lob_table())) {
-    //   ++i;
-    //   continue;
-    // }
-    if (table_schemas.count() == (i + 1) || (i + 1 - begin) >= batch_count) {
-      // if (table_schemas.count() == 257) {
-      //   LOG_INFO("MYTEST: create thread");
-      // }
-      std::thread th([&, begin, i, cur_trace_id] () {
-        std::string thread_name = "parallel_create_table_schema"+ std::to_string(i);
-        ob_get_origin_thread_name()=thread_name.c_str();
-          share::ObTenantEnv::set_tenant(ctx);
-        int ret = OB_SUCCESS;
-        ObCurTraceId::set(*cur_trace_id);
-        int64_t retry_times = 1;
-        while (OB_SUCC(ret)) {
-          if (OB_FAIL(batch_create_schema_local(tenant_id, ddl_service, table_schemas, begin, i + 1))) {
-            LOG_WARN("batch create schema failed", K(ret), "table count", i + 1 - begin);
-            // bugfix:
-            if (retry_times <= MAX_RETRY_TIMES) {
-              LOG_INFO("schema error while create table, need retry", KR(ret), K(retry_times));
-              retry_times++;
-              ret = OB_SUCCESS;
-              ob_usleep(200 * 1000L); // 1s
+      if (table_schemas.count() == (i + 1) || (i + 1 - begin) >= batch_count) {
+        std::thread th([&, begin, i, cur_trace_id] () {
+          const int64_t thread_start_time = ObTimeUtility::current_time();
+          sem_wait(&sem);
+          std::string thread_name = "parallel_create_table_schema" + std::to_string(i);
+          ob_get_origin_thread_name() = thread_name.c_str();
+          int ret = OB_SUCCESS;
+          ObCurTraceId::set(*cur_trace_id);
+          int64_t retry_times = 1;
+          while (OB_SUCC(ret)) {
+            if (OB_FAIL(batch_create_schema_local(tenant_id, ddl_service, table_schemas, begin, i + 1))) {
+              LOG_WARN("batch create schema failed", K(ret), "table count", i + 1 - begin);
+              // bugfix:
+              if (retry_times <= MAX_RETRY_TIMES) {
+                retry_times++;
+                LOG_INFO("schema error while create table, need retry", KR(ret), K(retry_times));
+                ret = OB_SUCCESS;
+                ob_usleep(150 * 1000L);
+                // usleep(1 * 200 * 1000L); // 1s
+              }
+            } else {
+              ATOMIC_AAF(&finish_cnt, i + 1 - begin);
+              break;
             }
-          } else {
-            ATOMIC_AAF(&finish_cnt, i + 1 - begin);
-            break;
           }
+          LOG_INFO("worker job", K(begin), K(i), K(i-begin), K(ret));
+          LOG_INFO("MYTEST: parallel create_table, cost: ", K(ObTimeUtility::current_time() - thread_start_time));
+          sem_post(&sem);
+        });
+        ths.push_back(std::move(th));
+        if (OB_SUCC(ret)) {
+            begin = i + 1;
         }
-        LOG_INFO("worker job", K(begin), K(i), K(i-begin), K(ret));
-      });
-      ths.push_back(std::move(th));
-      if (OB_SUCC(ret)) {
-        begin = i + 1;
       }
-    }
   }
   for (auto &th : ths) {
-    th.join();
+      th.join();
   }
   if (finish_cnt != table_schemas.count()) {
-    ret = OB_ERR_UNEXPECTED;
-    LOG_WARN("parallel_create_table_schema fail", K(finish_cnt), K(table_schemas.count()), K(ret), K(tenant_id));
+      ret = OB_ERR_UNEXPECTED;
+      LOG_WARN("parallel_create_table_schema fail", K(finish_cnt), K(table_schemas.count()), K(ret), K(tenant_id));
   }
+  LOG_INFO("MYTEST: parallel create_table, finished");
   return ret;
 }
 
