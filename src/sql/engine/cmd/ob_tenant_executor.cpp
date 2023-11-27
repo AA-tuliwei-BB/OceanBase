@@ -41,6 +41,7 @@
 #include "sql/code_generator/ob_static_engine_expr_cg.h"
 #include "observer/ob_inner_sql_connection_pool.h"
 #include "share/ls/ob_ls_status_operator.h"
+#include "src/rootserver/ob_bootstrap.h"
 namespace oceanbase
 {
 using namespace common;
@@ -165,7 +166,10 @@ int ObCreateTenantExecutor::wait_schema_refreshed_(const uint64_t tenant_id)
 int ObCreateTenantExecutor::wait_user_ls_valid_(const uint64_t tenant_id)
 {
   int ret = OB_SUCCESS;
+  
   int64_t start_ts = ObTimeUtility::current_time();
+    oceanbase::rootserver::ObDDLService ddl_service;
+    ObMySQLProxy &sql_proxy = ddl_service.get_sql_proxy();
   if (OB_ISNULL(GCTX.sql_proxy_)) {
     ret = OB_ERR_UNEXPECTED;
     LOG_WARN("sql_proxy is null", KR(ret), K(tenant_id));
@@ -177,6 +181,7 @@ int ObCreateTenantExecutor::wait_user_ls_valid_(const uint64_t tenant_id)
     ObLSStatusOperator status_op;
     ObLSStatusInfoArray ls_array;
     ObLSID ls_id;
+    
     //wait user ls create success
     while (OB_SUCC(ret) && !user_ls_valid) {
       ls_array.reset();

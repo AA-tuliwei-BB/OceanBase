@@ -355,6 +355,11 @@ public:
                                  ObLSStatusInfoIArray &ls_array,
                                  ObISQLClient &client);
 
+         
+  int get_all_ls_status_by_order1(const uint64_t tenant_id,
+                                 ObLSStatusInfoIArray &ls_array,
+                                 ObISQLClient &client);                        
+
   // get duplicate ls status info
   // @params[in]  tenant_id, which tenant to get
   // @params[in]  client, client to execute sql

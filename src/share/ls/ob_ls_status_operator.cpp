@@ -561,6 +561,39 @@ int ObLSStatusOperator::get_all_ls_status_by_order(
   return ret;
 }
 
+
+int ObLSStatusOperator::get_all_ls_status_by_order1(
+    const uint64_t tenant_id,
+    ObLSStatusInfoIArray &ls_array, ObISQLClient &client)
+{
+  int ret = OB_SUCCESS;
+  ls_array.reset();
+  if (OB_UNLIKELY(OB_INVALID_TENANT_ID == tenant_id)) {
+    ret = OB_ERR_UNEXPECTED;
+    LOG_WARN("operation is not valid", KR(ret), K(tenant_id));
+  } else {
+    ObSqlString sql;
+    if (OB_FAIL(sql.assign_fmt(
+                   "SELECT * FROM %s WHERE tenant_id = %lu ORDER BY tenant_id, ls_id",
+                   OB_ALL_LS_STATUS_TNAME, tenant_id))) {
+      LOG_WARN("failed to assign sql", KR(ret), K(sql), K(tenant_id));
+    } else if (OB_FAIL(exec_read(OB_SYS_TENANT_ID, sql, client, this, ls_array))) {
+      LOG_WARN("failed to exec read", KR(ret), K(tenant_id), K(sql));
+    }
+  }
+  return ret;
+}
+
+
+
+
+
+
+
+
+
+
+
 int ObLSStatusOperator::get_all_ls_status_by_order_for_switch_tenant(
     const uint64_t tenant_id,
     const bool ignore_need_create_abort,
