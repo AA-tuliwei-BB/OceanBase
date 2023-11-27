@@ -577,7 +577,7 @@ int ObLSStatusOperator::get_all_ls_status_by_order1(
                    "SELECT * FROM %s WHERE tenant_id = %lu ORDER BY tenant_id, ls_id",
                    OB_ALL_LS_STATUS_TNAME, tenant_id))) {
       LOG_WARN("failed to assign sql", KR(ret), K(sql), K(tenant_id));
-    } else if (OB_FAIL(exec_read(OB_SYS_TENANT_ID, sql, client, this, ls_array))) {
+    } else if (OB_FAIL(exec_read1(tenant_id, sql, client, this, ls_array))) {
       LOG_WARN("failed to exec read", KR(ret), K(tenant_id), K(sql));
     }
   }

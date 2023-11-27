@@ -171,11 +171,16 @@ public:
    * param[in]: the result array of inner_table*/
 
   template <typename TableOperator, typename LS_Result>
-  int exec_read(const uint64_t &tenant_id,
+int exec_read(const uint64_t &tenant_id,
                        const common::ObSqlString &sql, ObISQLClient &client,
                        TableOperator *table_operator,
                        common::ObIArray<LS_Result> &res);
 
+template <typename TableOperator, typename LS_Result>
+int exec_read1(const uint64_t &tenant_id,
+                       const common::ObSqlString &sql, ObISQLClient &client,
+                       TableOperator *table_operator,
+                       common::ObIArray<LS_Result> &res);
  private:
   DISALLOW_COPY_AND_ASSIGN(ObLSTemplateOperator);
 };
@@ -194,6 +199,59 @@ int ObLSTemplateOperator::exec_read(const uint64_t &tenant_id,
     ObTimeoutCtx ctx;
     const int64_t default_timeout = GCONF.internal_sql_execute_timeout;
     uint64_t exec_tenant_id = table_operator->get_exec_tenant_id(tenant_id);
+    if (OB_UNLIKELY(OB_INVALID_TENANT_ID == exec_tenant_id)) {
+      ret = OB_ERR_UNEXPECTED;
+      SHARE_LOG(WARN, "failed to get exec tenant id", KR(ret), K(exec_tenant_id));
+    } else if (OB_FAIL(ObShareUtil::set_default_timeout_ctx(ctx, default_timeout))) {
+      SHARE_LOG(WARN, "failed to set default timeout ctx", KR(ret), K(default_timeout));
+    } else {
+      HEAP_VAR(ObMySQLProxy::MySQLResult, res) {
+        common::sqlclient::ObMySQLResult *result = NULL;
+        if (OB_FAIL(client.read(res, exec_tenant_id, sql.ptr()))) {
+          SHARE_LOG(WARN, "failed to read", KR(ret), K(exec_tenant_id), K(sql));
+        } else if (OB_ISNULL(result = res.get_result())) {
+          ret = OB_ERR_UNEXPECTED;
+          SHARE_LOG(WARN, "failed to get sql result", KR(ret));
+        } else {
+           LS_Result single_res;
+           while (OB_SUCC(ret) && OB_SUCC(result->next())) {
+             single_res.reset();
+             if (OB_FAIL(table_operator->fill_cell(result, single_res))) {
+               SHARE_LOG(WARN, "failed to read cell from result", KR(ret), K(sql));
+             } else if (OB_FAIL(ls_res.push_back(single_res))) {
+               SHARE_LOG(WARN, "failed to get cell", KR(ret), K(single_res));
+             }
+           }  // end while
+           if (OB_ITER_END == ret) {
+             ret = OB_SUCCESS;
+           } else if (OB_FAIL(ret)) {
+             SHARE_LOG(WARN, "failed to get ls", KR(ret));
+           } else {
+             ret = OB_ERR_UNEXPECTED;
+             SHARE_LOG(WARN, "ret can not be success", KR(ret));
+           }
+        }  // end heap var 
+      }
+    }//end else
+  }
+  return ret;
+}
+
+
+template <typename TableOperator, typename LS_Result>
+int ObLSTemplateOperator::exec_read1(const uint64_t &tenant_id,
+                        const common::ObSqlString &sql, ObISQLClient &client,
+                        TableOperator *table_operator, common::ObIArray<LS_Result> &ls_res)
+{
+  int ret = OB_SUCCESS;
+  ls_res.reset();
+  if (OB_UNLIKELY(OB_INVALID_TENANT_ID == tenant_id) || OB_ISNULL(table_operator)) {
+    ret = OB_INVALID_ARGUMENT;
+    SHARE_LOG(WARN, "invalid argument", KR(ret), K(tenant_id), KP(table_operator));
+  } else {
+    ObTimeoutCtx ctx;
+    const int64_t default_timeout = GCONF.internal_sql_execute_timeout;
+    uint64_t exec_tenant_id = OB_SYS_TENANT_ID;
     if (OB_UNLIKELY(OB_INVALID_TENANT_ID == exec_tenant_id)) {
       ret = OB_ERR_UNEXPECTED;
       SHARE_LOG(WARN, "failed to get exec tenant id", KR(ret), K(exec_tenant_id));
