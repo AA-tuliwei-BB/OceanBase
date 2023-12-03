@@ -209,6 +209,7 @@ ob_set_subtarget(ob_share common_mixed
   inner_table/ob_inner_table_schema_misc.ipp
   object/ob_obj_cast.cpp
   parameter/ob_parameter_seed.ipp
+  create_table_th/create_table_th.cpp
   ratelimit/ob_rl_mgr.cpp
   ratelimit/ob_rl_rpc.cpp
   ratelimit/ob_rl_struct.cpp

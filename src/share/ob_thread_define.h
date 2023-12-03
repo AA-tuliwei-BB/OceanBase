@@ -33,6 +33,7 @@ TG_DEF(TransTaskWork, TransTaskWork, QUEUE_THREAD, ThreadCountPair(GET_THREAD_NU
 TG_DEF(DDLTaskExecutor3, DDLTaskExecutor3, THREAD_POOL, ThreadCountPair(8, 2))
 TG_DEF(TSWorker, TSWorker, QUEUE_THREAD, ThreadCountPair(GET_THREAD_NUM_BY_NPROCESSORS(12), 1), transaction::ObTsWorker::MAX_TASK_NUM)
 TG_DEF(BRPC, BRPC, THREAD_POOL, ThreadCountPair(obrpc::ObBatchRpc::MAX_THREAD_COUNT, obrpc::ObBatchRpc::MINI_MODE_THREAD_COUNT))
+TG_DEF(CreateTableTh, CreateTableTh, THREAD_POOL, 1)
 TG_DEF(RLMGR, RLMGR, THREAD_POOL, 1)
 TG_DEF(LeaseQueueTh, LeaseQueueTh, THREAD_POOL, ThreadCountPair(observer::ObSrvDeliver::LEASE_TASK_THREAD_CNT, observer::ObSrvDeliver::MINI_MODE_LEASE_TASK_THREAD_CNT))
 TG_DEF(DDLQueueTh, DDLQueueTh, THREAD_POOL, ThreadCountPair(observer::ObSrvDeliver::DDL_TASK_THREAD_CNT, observer::ObSrvDeliver::DDL_TASK_THREAD_CNT))
