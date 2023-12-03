@@ -23481,9 +23481,9 @@ int ObDDLService::parallel_create_table_schema(uint64_t tenant_id, ObIArray<ObTa
   ObCurTraceId::TraceId *cur_trace_id = ObCurTraceId::get_trace_id();
   int tmp = 0;
 
-  threads.resize(16);
+  threads.resize(7);
   int64_t atomic_current_table = 0, created_table = 0;
-  for (int i = 0; i < 16; ++i) {
+  for (int i = 0; i < 7; ++i) {
     ObCreateTableTh &th = threads[i];
     auto my_lambda = [&, cur_trace_id] () {
       const int64_t thread_start_time = ObTimeUtility::current_time();

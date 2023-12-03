@@ -370,3 +370,4 @@ perf.*
 
 copy_log.sh
 my_deploy.sh
+cp_deploy.sh
