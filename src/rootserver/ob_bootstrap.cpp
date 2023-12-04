@@ -57,6 +57,7 @@
 #include "share/scn.h"
 #include "rootserver/ob_heartbeat_service.h"
 #include "rootserver/ob_root_service.h"
+#include <functional>
 #include <thread>
 #ifdef OB_BUILD_TDE_SECURITY
 #include "close_modules/tde_security/share/ob_master_key_getter.h"
@@ -570,33 +571,53 @@ int ObBootstrap::execute_bootstrap(rootserver::ObServerZoneOpService &server_zon
     LOG_WARN("ob system is already bootstrap, cannot bootstrap again", K(ret));
   } else if (OB_FAIL(check_bootstrap_rs_list(rs_list_))) {
     LOG_WARN("failed to check_bootstrap_rs_list", K_(rs_list), K(ret));
-  } else if (OB_FAIL(create_all_core_table_partition())) {
-    LOG_WARN("fail to create all core_table partition", KR(ret));
   } else if (OB_FAIL(set_in_bootstrap())) {
     LOG_WARN("failed to set in bootstrap", K(ret));
-  } else if (OB_FAIL(init_global_stat())) {
-    LOG_WARN("failed to init_global_stat", K(ret));
-  } else if (OB_FAIL(construct_all_schema(table_schemas))) {
-    LOG_WARN("construct all schema fail", K(ret));
-    // OURTODO 尝试改把下面这两个改成并行的
-  } else if (OB_FAIL(broadcast_sys_schema(table_schemas))) {
-    LOG_WARN("broadcast_sys_schemas failed", K(table_schemas), K(ret));
-  } else if (OB_FAIL(create_all_partitions())) {
-    LOG_WARN("create all partitions fail", K(ret));
-  } else if (OB_FAIL(create_all_schema(ddl_service_, table_schemas))) {
-    LOG_WARN("create_all_schema failed",  K(table_schemas), K(ret));
+  } else {
+    ObCreateTableTh create_partition_th;
+    std::function<void()> func([&]() {
+      if (OB_FAIL(create_all_core_table_partition())) {
+        LOG_WARN("fail to create all core_table partition", KR(ret));
+      } else if (OB_FAIL(create_all_partitions())) {
+        LOG_WARN("create all partitions fail", K(ret));
+      }
+    });
+    create_partition_th.init(func);
+    create_partition_th.start();
+
+    if (OB_FAIL(init_global_stat())) {
+      LOG_WARN("failed to init_global_stat", K(ret));
+    } else if (OB_FAIL(construct_all_schema(table_schemas))) {
+      LOG_WARN("construct all schema fail", K(ret));
+    } else if (OB_FAIL(broadcast_sys_schema(table_schemas))) {
+      LOG_WARN("broadcast_sys_schemas failed", K(table_schemas), K(ret));
+    }
+    create_partition_th.wait();
+
+    if (OB_FAIL(create_all_schema(ddl_service_, table_schemas))) {
+      LOG_WARN("create_all_schema failed",  K(table_schemas), K(ret));
+    }
+    BOOTSTRAP_CHECK_SUCCESS_V2("create_all_schema");
   }
-  BOOTSTRAP_CHECK_SUCCESS_V2("create_all_schema");
   ObMultiVersionSchemaService &schema_service = ddl_service_.get_schema_service();
 
-  if (OB_SUCC(ret)) {
-    if (OB_FAIL(init_system_data())) {
-      LOG_WARN("failed to init system data", KR(ret));
-    } else if (OB_FAIL(ddl_service_.refresh_schema(OB_SYS_TENANT_ID))) {
-      LOG_WARN("failed to refresh_schema", K(ret));
+  std::function<void()> func([&]() {
+    if (OB_SUCC(ret)) {
+      if (OB_FAIL(init_system_data())) {
+        LOG_WARN("failed to init system data", KR(ret));
+      }
+      else if (OB_FAIL(ddl_service_.refresh_schema(OB_SYS_TENANT_ID))) {
+        LOG_WARN("failed to refresh_schema", K(ret));
+      }
     }
-  }
-  BOOTSTRAP_CHECK_SUCCESS_V2("refresh_schema");
+    BOOTSTRAP_CHECK_SUCCESS_V2("refresh_schema");
+  });
+  func();
+
+  // ObCreateTableTh refresh_th;
+  // refresh_th.init(func);
+  // refresh_th.start();
+  // refresh_th.wait();
 
   LOG_INFO("MYTEST: rs start");
   if (FAILEDx(add_servers_in_rs_list(server_zone_op_service))) {

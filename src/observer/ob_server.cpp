@@ -1009,7 +1009,7 @@ int ObServer::start()
     while (OB_SUCC(ret) && !stop_ && !synced) {
       synced = multi_tenant_.has_synced();
       if (!synced) {
-        USLEEP(200 * 1000);
+        USLEEP(50 * 1000);
       }
     }
     FLOG_INFO("check if multi tenant synced", KR(ret), K(stop_), K(synced));
@@ -1018,7 +1018,7 @@ int ObServer::start()
     while (OB_SUCC(ret) && !stop_ && !schema_ready) {
       schema_ready = schema_service_.is_sys_full_schema();
       if (!schema_ready) {
-        USLEEP(100 * 1000); // MYTAG: modify here
+        USLEEP(50 * 1000); // MYTAG: modify here
       }
     }
     FLOG_INFO("check if schema ready", KR(ret), K(stop_), K(schema_ready));

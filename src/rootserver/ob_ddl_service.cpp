@@ -23103,11 +23103,6 @@ int ObDDLService::init_tenant_schema(
       //FIXME:(yanmu.ztl) lock tenant's __all_core_table
       const int64_t refreshed_schema_version = 0;
 
-      ObDDLSQLTransaction trans(schema_service_, true, true, false, false);
-      if (OB_FAIL(trans.start(sql_proxy_, tenant_id, refreshed_schema_version))) {
-        LOG_WARN("fail to start trans", KR(ret), K(tenant_id));
-      }
-
       // auto my_lambda = [&] (int thread_id, int mode, int *ret_p) {
       //   std::string thread_name = "my_create_table" + std::to_string(thread_id);
       //   ob_get_origin_thread_name() = thread_name.c_str();
@@ -23153,7 +23148,11 @@ int ObDDLService::init_tenant_schema(
       if (OB_FAIL(create_sys_table_schemas(tables))) {
         LOG_WARN("fail to create sys tables", KR(ret), K(tenant_id));
       }
-      if (is_user_tenant(tenant_id) && OB_FAIL(set_sys_ls_status(tenant_id))) {
+
+      ObDDLSQLTransaction trans(schema_service_, true, true, false, false);
+      if (OB_FAIL(trans.start(sql_proxy_, tenant_id, refreshed_schema_version))) {
+        LOG_WARN("fail to start trans", KR(ret), K(tenant_id));
+      } else if (is_user_tenant(tenant_id) && OB_FAIL(set_sys_ls_status(tenant_id))) {
         LOG_WARN("failed to set sys ls status", KR(ret), K(tenant_id));
       } else if (OB_FAIL(schema_service_impl->gen_new_schema_version(
                 tenant_id, init_schema_version, new_schema_version))) {
@@ -23211,9 +23210,10 @@ int ObDDLService::init_tenant_schema(
         LOG_WARN("fail to get sys ls info by operator", KR(ret), K(tenant_id));
       } else if (OB_FAIL(sys_ls_info.get_paxos_member_addrs(addrs))) {
         LOG_WARN("fail to get paxos member addrs", K(ret), K(tenant_id), K(sys_ls_info));
-      } else if (OB_FAIL(publish_schema(tenant_id, addrs))) {
-        LOG_WARN("fail to publish schema", KR(ret), K(tenant_id), K(addrs));
       }
+      // else if (OB_FAIL(publish_schema(tenant_id, addrs))) {
+      //   LOG_WARN("fail to publish schema", KR(ret), K(tenant_id), K(addrs));
+      // }
     }
 
     LOG_INFO("CREATE_TENANT start set baseline schema version", KR(ret));
