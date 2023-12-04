@@ -168,7 +168,7 @@ public:
   class ObRefreshServerTask : public common::ObAsyncTimerTask
   {
   public:
-    const static int64_t REFRESH_SERVER_INTERVAL = 1L * 1000 * 1000; // 1 second
+    const static int64_t REFRESH_SERVER_INTERVAL = 0.3 * 1000 * 1000; // 1 second
     explicit ObRefreshServerTask(ObRootService &root_service);
     virtual ~ObRefreshServerTask() {};
     // interface of AsyncTask
