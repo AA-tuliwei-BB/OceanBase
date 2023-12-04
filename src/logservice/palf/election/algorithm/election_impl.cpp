@@ -28,7 +28,7 @@ namespace election
 {
 
 // int64_t MAX_TST = 1_s; MYCHANGE
-int64_t MAX_TST = 20_ms;
+int64_t MAX_TST = 30_ms;
 int64_t INIT_TS = -1;
 ObOccamTimer GLOBAL_REPORT_TIMER;
 

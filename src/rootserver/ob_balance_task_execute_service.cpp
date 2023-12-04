@@ -150,7 +150,7 @@ void ObBalanceTaskExecuteService::do_work()
     int64_t idle_time_us = 100 * 1000L;
     int tmp_ret = OB_SUCCESS;
     while (!has_set_stop()) {
-      idle_time_us = 0.2 * 1000 * 1000L; // MYCHANGE
+      idle_time_us = 0.5 * 1000 * 1000L; // MYCHANGE
       ObCurTraceId::init(GCONF.self_addr_);
       task_array_.reset();
       DEBUG_SYNC(BEFORE_PROCESS_BALANCE_EXECUTE_WORK);
