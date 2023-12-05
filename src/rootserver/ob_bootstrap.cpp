@@ -562,6 +562,15 @@ int ObBootstrap::execute_bootstrap(rootserver::ObServerZoneOpService &server_zon
 
   BOOTSTRAP_LOG(INFO, "start do execute_bootstrap");
 
+  std::function<void()> func_refresh([&]() {
+    if (OB_SUCC(ret)) {
+      if (OB_FAIL(ddl_service_.refresh_schema(OB_SYS_TENANT_ID))) {
+        LOG_WARN("failed to refresh_schema", K(ret));
+      }
+    }
+    BOOTSTRAP_CHECK_SUCCESS_V2("refresh_schema");
+  });
+
   if (OB_FAIL(check_inner_stat())) {
     LOG_WARN("check_inner_stat failed", K(ret));
   } else if (OB_FAIL(check_is_already_bootstrap(already_bootstrap))) {
@@ -591,6 +600,8 @@ int ObBootstrap::execute_bootstrap(rootserver::ObServerZoneOpService &server_zon
       LOG_WARN("construct all schema fail", K(ret));
     } else if (OB_FAIL(broadcast_sys_schema(table_schemas))) {
       LOG_WARN("broadcast_sys_schemas failed", K(table_schemas), K(ret));
+    } else if (OB_FAIL(init_system_data())) {
+      LOG_WARN("failed to init system data", KR(ret));
     }
     create_partition_th.wait();
 
@@ -601,23 +612,10 @@ int ObBootstrap::execute_bootstrap(rootserver::ObServerZoneOpService &server_zon
   }
   ObMultiVersionSchemaService &schema_service = ddl_service_.get_schema_service();
 
-  std::function<void()> func([&]() {
-    if (OB_SUCC(ret)) {
-      if (OB_FAIL(init_system_data())) {
-        LOG_WARN("failed to init system data", KR(ret));
-      }
-      else if (OB_FAIL(ddl_service_.refresh_schema(OB_SYS_TENANT_ID))) {
-        LOG_WARN("failed to refresh_schema", K(ret));
-      }
-    }
-    BOOTSTRAP_CHECK_SUCCESS_V2("refresh_schema");
-  });
-  func();
 
-  // ObCreateTableTh refresh_th;
-  // refresh_th.init(func);
-  // refresh_th.start();
-  // refresh_th.wait();
+  ObCreateTableTh refresh_th;
+  refresh_th.init(func_refresh);
+  refresh_th.start();
 
   LOG_INFO("MYTEST: rs start");
   if (FAILEDx(add_servers_in_rs_list(server_zone_op_service))) {
@@ -628,6 +626,7 @@ int ObBootstrap::execute_bootstrap(rootserver::ObServerZoneOpService &server_zon
     ROOTSERVICE_EVENT_ADD("bootstrap", "bootstrap_succeed");
   }
   LOG_INFO("MYTEST: rs done");
+  refresh_th.wait();
 
   BOOTSTRAP_CHECK_SUCCESS();
   return ret;
