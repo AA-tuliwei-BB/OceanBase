@@ -136,6 +136,7 @@ int ObCommonSqlProxy::read(ObISQLConnection *conn, ReadResult &result,
 
 int ObCommonSqlProxy::write(const uint64_t tenant_id, const char *sql, const int32_t group_id, int64_t &affected_rows)
 {
+   LOG_INFO("ObCommonSqlProxy::write begin");
   int ret = OB_SUCCESS;
   int64_t start = ::oceanbase::common::ObTimeUtility::current_time();
   ObISQLConnection *conn = NULL;
@@ -157,6 +158,7 @@ int ObCommonSqlProxy::write(const uint64_t tenant_id, const char *sql, const int
   }
   close(conn, ret);
   LOG_TRACE("execute sql", KCSTRING(sql), K(ret));
+  LOG_INFO("ObCommonSqlProxy::write end");
   return ret;
 }
 

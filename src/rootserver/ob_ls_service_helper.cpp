@@ -633,7 +633,7 @@ int ObLSServiceHelper::check_if_need_wait_user_ls_sync_scn_(
   }
   return ret;
 }
-
+//ls_info是状态机，指导操作,所以叫machine.ls_info_
 int ObLSServiceHelper::revision_to_equal_status_(const ObLSStatusMachineParameter &machine,
                                       const share::ObTenantSwitchoverStatus &working_sw_status,
                                       ObTenantLSInfo& tenant_ls_info)
@@ -642,6 +642,7 @@ int ObLSServiceHelper::revision_to_equal_status_(const ObLSStatusMachineParamete
   const share::ObLSStatusInfo &status_info = machine.status_info_;
   const share::ObLSAttr &ls_info = machine.ls_info_;
   const uint64_t tenant_id = tenant_ls_info.get_tenant_id();
+  ObTenantLSInfo & tenant1_ls_info=tenant_ls_info;
   ObLSStatusOperator status_op;
   if (OB_UNLIKELY(!machine.is_valid())) {
     ret = OB_INVALID_ARGUMENT;
@@ -675,10 +676,25 @@ int ObLSServiceHelper::revision_to_equal_status_(const ObLSStatusMachineParamete
       ret = OB_ERR_UNEXPECTED;
       LOG_WARN("status machine not expected", KR(ret), K(machine));
     }
-  } else if (ls_info.ls_is_creating()) {
+  } else if (ls_info.ls_is_creating()) 
+  {
+
+      const share::ObLSAttr &ls_info1=ls_info;
+
     if (!status_info.is_valid()) {
+      LOG_INFO("trans begin");
       //create ls
-      START_TRANSACTION(GCTX.sql_proxy_, ObLSLifeIAgent::get_exec_tenant_id(tenant_id));
+      //meta租户内__all_ls_status表插入
+      // START_TRANSACTION(GCTX.sql_proxy_,ObLSLifeIAgent::get_exec_tenant_id(tenant_id) );
+     
+       ObMySQLTransaction trans;    
+       
+       //这个GCTX.sql_proxy是ObMySQLProxy类，继承ObCommonSqlProxy，继承ObISQLClient   
+       //应该是需要找个sql_proxy能不用InnerSQLConnectionPool即可 ?                       
+  if (FAILEDx(trans.start(GCTX.sql_proxy_,ObLSLifeIAgent::get_exec_tenant_id(tenant_id)))) {                      
+    SHARE_LOG(WARN, "failed to start trans", KR(ret), K(tenant_id)); 
+  }
+      LOG_INFO("ls_service_helper create_new_ls_in_trans begin");
       if (FAILEDx(create_new_ls_in_trans(ls_info.get_ls_id(),
                                          ls_info.get_ls_group_id(),
                                          ls_info.get_create_scn(),
@@ -687,22 +703,82 @@ int ObLSServiceHelper::revision_to_equal_status_(const ObLSStatusMachineParamete
         LOG_WARN("failed to create new ls in trans", KR(ret), K(ls_info), K(tenant_ls_info), K(working_sw_status));
       }
       END_TRANSACTION(trans);
-    } else if (status_info.ls_is_created() || status_info.ls_is_create_abort()) {
+      LOG_INFO("trans end");
+
+      //MYCHANGE
+  //     if(ObLSLifeIAgent::get_exec_tenant_id(tenant_id)!=1)
+  //    {  LOG_INFO("trans1 begin");
+  //      ObMySQLTransaction trans1;                                               
+  // if (FAILEDx(trans1.start(GCTX.sql_proxy_, 2002))) {                      
+  //   SHARE_LOG(WARN, "failed to start trans1", KR(ret), K(1)); 
+  // }
+  // LOG_INFO("create_new_ls_in_trans1 begin");
+      
+      
+  //     if (FAILEDx(create_new_ls_in_trans(ls_info1.get_ls_id(),
+  //                                        ls_info1.get_ls_group_id(),
+  //                                        ls_info1.get_create_scn(),
+  //                                        working_sw_status,
+  //                                        tenant1_ls_info, trans1, ls_info1.get_ls_flag()))) {
+  //       LOG_WARN("failed to create new ls in trans1", KR(ret), K(ls_info1), K(tenant1_ls_info), K(working_sw_status));
+  //     }
+  //       if (trans1.is_started()) {
+  //   int tmp_ret = OB_SUCCESS;
+  //   if (OB_TMP_FAIL(trans1.end(OB_SUCC(ret)))) {
+  //     ret = OB_SUCC(ret) ? tmp_ret : ret;
+  //     SHARE_LOG(WARN, "failed to end trans", KR(ret), K(tmp_ret));
+  //   }
+
+  // }
+  // LOG_INFO("trans1 end");}
+
+
+
+  
+      
+     
+
+
+
+    
+    
+    } 
+    
+    else if (status_info.ls_is_created() || status_info.ls_is_create_abort()) {
     } else {
       ret = OB_ERR_UNEXPECTED;
       LOG_WARN("status machine not expected", KR(ret), K(machine));
     }
-  } else if (ls_info.ls_is_normal()) {
+  }
+   else if (ls_info.ls_is_normal()) 
+  {
+    //MYCHANGE
+    LOG_INFO("update SYS TENANT status begin");
     if (!status_info.ls_is_created()) {
       ret = OB_ERR_UNEXPECTED;
       LOG_WARN("status machine not expected", KR(ret), K(machine));
-    } else if (OB_FAIL(status_op.update_ls_status(
+    }
+     else if (OB_FAIL(status_op.update_ls_status(
             tenant_id, status_info.ls_id_, status_info.status_,
             ls_info.get_ls_status(), working_sw_status, *GCTX.sql_proxy_))) {
       LOG_WARN("failed to update ls status", KR(ret), K(status_info), K(tenant_id),
           K(ls_info), K(working_sw_status));
     }
-  } else if (ls_info.ls_is_pre_tenant_dropping()) {
+    LOG_INFO("update SYS TENANT status end");
+//修改
+    //   else{
+    //     LOG_INFO("update SYS TENANT status begin");
+    //    if (OB_FAIL(status_op.update_ls_status(
+    //         tenant_id, status_info.ls_id_, status_info.status_,
+    //         ls_info.get_ls_status(), working_sw_status, *GCTX.sql_proxy_))) {
+    //   LOG_WARN("failed to update ls status1", KR(ret), K(status_info), K(tenant_id),
+    //       K(ls_info), K(working_sw_status));
+    // }
+    // LOG_INFO("update SYS TENANT status end");
+    // }
+  } 
+  
+  else if (ls_info.ls_is_pre_tenant_dropping()) {
     if (!status_info.ls_is_normal() || !status_info.ls_id_.is_sys_ls()) {
       ret = OB_ERR_UNEXPECTED;
       LOG_WARN("status machine not expected", KR(ret), K(machine));
@@ -880,7 +956,7 @@ int ObLSServiceHelper::create_new_ls_in_trans(
     } else {
       LOG_WARN("failed to get ls group info", KR(ret), K(ls_group_id), K(tenant_ls_info));
     }
-
+         //new info记录租户id和log stream id以及状态
     if (FAILEDx(new_info.init(tenant_id, ls_id,
                               ls_group_id,
                               share::OB_LS_CREATING,
@@ -891,13 +967,123 @@ int ObLSServiceHelper::create_new_ls_in_trans(
     } else if (OB_FAIL(ObTenantThreadHelper::get_zone_priority(primary_zone,
             *tenant_ls_info.get_tenant_schema(), zone_priority))) {
       LOG_WARN("failed to get normalize primary zone", KR(ret), K(primary_zone), K(zone_priority));
-    } else if (OB_FAIL(ls_life_agent.create_new_ls_in_trans(new_info, create_scn,
+      //注意下面这个函数
+    } 
+    
+    else 
+    {
+      LOG_INFO("create_new_ls_in_trans begin");
+
+      if (OB_FAIL(ls_life_agent.create_new_ls_in_trans(new_info, create_scn,
             zone_priority.string(), working_sw_status, trans))) {
       LOG_WARN("failed to insert ls info", KR(ret), K(new_info), K(create_scn), K(zone_priority));
+   
     }
+    LOG_INFO("create_new_ls_in_trans end");
+    }
+
+
   }
   return ret;
 }
+
+
+int ObLSServiceHelper::create_new_ls_in_trans1(
+    const share::ObLSID &ls_id,
+    const uint64_t ls_group_id,
+    const SCN &create_scn,
+    const share::ObTenantSwitchoverStatus &working_sw_status,
+    ObTenantLSInfo& tenant_ls_info,
+    ObMySQLTransaction &trans,
+    const share::ObLSFlag &ls_flag)
+{
+  int ret = OB_SUCCESS;
+  int64_t info_index = OB_INVALID_INDEX_INT64;
+  if (OB_UNLIKELY(!ls_id.is_valid()
+                  || OB_INVALID_ID == ls_group_id
+                  || !create_scn.is_valid()
+                  || !ls_flag.is_valid())) {
+    ret = OB_INVALID_ARGUMENT;
+    LOG_WARN("ls id is invalid", KR(ret), K(ls_id), K(ls_group_id), K(create_scn), K(ls_flag));
+  } else if (OB_ISNULL(tenant_ls_info.get_tenant_schema())
+             || OB_ISNULL(GCTX.sql_proxy_)) {
+    ret = OB_ERR_UNEXPECTED;
+    LOG_WARN("tenant stat not valid", KR(ret), KP(tenant_ls_info.get_tenant_schema()), KP(GCTX.sql_proxy_));
+  } else if (OB_FAIL(tenant_ls_info.gather_stat())) {
+    LOG_WARN("failed to gather stat", KR(ret));
+  } else {
+    const uint64_t tenant_id = tenant_ls_info.get_tenant_id();
+    share::ObLSStatusInfo new_info;
+    ObLSGroupInfo group_info;
+    ObZone primary_zone;
+    ObLSLifeAgentManager ls_life_agent(*GCTX.sql_proxy_);
+    ObSqlString zone_priority;
+    uint64_t unit_group_id = 0;
+    if (0 == ls_group_id) {
+      unit_group_id = 0;
+      if (!ls_flag.is_duplicate_ls()) {
+        ret = OB_ERR_UNEXPECTED;
+        LOG_WARN("ls without ls group must be duplate", KR(ret),
+                 K(ls_group_id), K(ls_id), K(ls_flag));
+      } else if (OB_FAIL(primary_zone.assign(tenant_ls_info.get_primary_zone().at(0)))) {
+        LOG_WARN("failed to assign primary zone", KR(ret), K(tenant_ls_info));
+      }
+    } else if (OB_SUCC(tenant_ls_info.get_ls_group_info(
+            ls_group_id, group_info))) {
+      // need a new primary zone
+      unit_group_id = group_info.unit_group_id_;
+      if (OB_FAIL(tenant_ls_info.get_next_primary_zone(group_info, primary_zone))) {
+        LOG_WARN("failed to get next primary zone", KR(ret), K(group_info));
+      }
+    } else if (OB_ENTRY_NOT_EXIST == ret) {
+      // need a new unit group
+      ret = OB_SUCCESS;
+      int64_t unit_group_index = OB_INVALID_INDEX_INT64;
+      if (OB_FAIL(tenant_ls_info.get_next_unit_group(unit_group_index))) {
+        LOG_WARN("failed to get next unit group", KR(ret));
+      } else if (OB_UNLIKELY(OB_INVALID_INDEX_INT64 == unit_group_index
+                             || unit_group_index >= tenant_ls_info.get_unit_group_array().count())) {
+        ret = OB_ERR_UNEXPECTED;
+        LOG_WARN("failed to next unit group", KR(ret), K(unit_group_index), K(tenant_ls_info));
+      } else {
+        unit_group_id = tenant_ls_info.get_unit_group_array().at(unit_group_index).unit_group_id_;
+        if (OB_FAIL(primary_zone.assign(tenant_ls_info.get_primary_zone().at(0)))) {
+          LOG_WARN("failed to assign primary zone", KR(ret), K(tenant_ls_info));
+        }
+      }
+    } else {
+      LOG_WARN("failed to get ls group info", KR(ret), K(ls_group_id), K(tenant_ls_info));
+    }
+         //new info记录租户id和log stream id以及状态
+    if (FAILEDx(new_info.init(tenant_id, ls_id,
+                              ls_group_id,
+                              share::OB_LS_CREATING,
+                              unit_group_id,
+                              primary_zone, ls_flag))) {
+      LOG_WARN("failed to init new info", KR(ret), K(tenant_id), K(unit_group_id),
+               K(ls_id), K(ls_group_id), K(group_info), K(primary_zone), K(ls_flag));
+    } else if (OB_FAIL(ObTenantThreadHelper::get_zone_priority(primary_zone,
+            *tenant_ls_info.get_tenant_schema(), zone_priority))) {
+      LOG_WARN("failed to get normalize primary zone", KR(ret), K(primary_zone), K(zone_priority));
+      //注意下面这个函数
+    } 
+    
+    else 
+    {
+      LOG_INFO("create_new_ls_in_trans1 begin");
+        //MYCHANGE
+      if (OB_FAIL(ls_life_agent.create_new_ls_in_trans1(new_info, create_scn,
+            zone_priority.string(), working_sw_status, trans))) {
+      LOG_WARN("failed to insert ls info", KR(ret), K(new_info), K(create_scn), K(zone_priority));
+   
+    }
+    }
+
+
+  }
+  return ret;
+}
+
 
 int ObLSServiceHelper::balance_ls_group(
     const bool need_execute_balance,

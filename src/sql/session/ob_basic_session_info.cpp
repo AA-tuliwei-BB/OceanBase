@@ -572,6 +572,22 @@ int ObBasicSessionInfo::switch_tenant_with_name(
   return ret;
 }
 
+
+
+
+//MYCHANGE
+/*切换租户的逻辑如下
+当前租户必须是系统租户。
+检查传入的有效租户ID是否合法。
+如果存在事务并且当前租户与传入的租户ID不一致，则要求在事务中先提交或回滚。
+如果满足条件，切换有效租户并返回操作结果。*/
+
+
+
+
+
+
+
 int ObBasicSessionInfo::switch_tenant(uint64_t effective_tenant_id)
 {
   int ret = OB_SUCCESS;
@@ -582,7 +598,11 @@ int ObBasicSessionInfo::switch_tenant(uint64_t effective_tenant_id)
   } else if (effective_tenant_id <= 0) {
     ret = OB_INVALID_ARGUMENT;
     LOG_WARN("invalid tenant_id", K(ret), K(effective_tenant_id));
-  } else if (OB_NOT_NULL(tx_desc_) && effective_tenant_id != effective_tenant_id_) {
+  }
+   else if (OB_NOT_NULL(tx_desc_) && effective_tenant_id != effective_tenant_id_) 
+  {
+
+
     if (tx_desc_->in_tx_or_has_extra_state()) {
       ret = OB_NOT_SUPPORTED;
       // only inner-SQL goes switch_tenant and may fall into such state

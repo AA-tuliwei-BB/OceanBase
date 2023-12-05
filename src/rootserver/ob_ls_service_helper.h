@@ -230,6 +230,16 @@ public:
       ObTenantLSInfo& tenant_ls_info,
       common::ObMySQLTransaction &trans,
       const share::ObLSFlag &ls_flag);
+
+
+  static int create_new_ls_in_trans1(const share::ObLSID &ls_id,
+      const uint64_t ls_group_id,
+      const share::SCN &create_scn,
+      const share::ObTenantSwitchoverStatus &working_sw_status,
+      ObTenantLSInfo& tenant_ls_info,
+      common::ObMySQLTransaction &trans,
+      const share::ObLSFlag &ls_flag);
+      
   static int balance_ls_group(
       const bool need_execute_balance,
       ObTenantLSInfo& tenant_ls_info,

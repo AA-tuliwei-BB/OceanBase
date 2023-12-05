@@ -93,6 +93,7 @@ int ObInnerSQLConnectionPool::init(ObMultiVersionSchemaService *schema_service,
 
 int ObInnerSQLConnectionPool::acquire(const uint64_t tenant_id, common::sqlclient::ObISQLConnection *&conn, ObISQLClient *client_addr, const int32_t group_id)
 {
+  LOG_INFO("ObInnerSQLConnectionPool::acquire begin");
   int ret = OB_SUCCESS;
   UNUSED(tenant_id);
   ObInnerSQLConnection *inner_sql_conn = NULL;
@@ -129,7 +130,6 @@ int ObInnerSQLConnectionPool::acquire(const uint64_t tenant_id, common::sqlclien
       }
     }
   }
-
   return ret;
 }
 

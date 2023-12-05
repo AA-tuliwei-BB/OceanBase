@@ -961,6 +961,7 @@ int ObInnerSQLConnection::start_transaction(
     const uint64_t &tenant_id,
     bool with_snap_shot /* = false */)
 {
+   LOG_INFO("ObInnerSQLConnection::start_transaction begin");
   int ret = OB_SUCCESS;
   auto function = [&]() { return start_transaction_inner(tenant_id, with_snap_shot); };
   if (OB_FAIL(retry_while_no_tenant_resource(GCONF.cluster_id, tenant_id, function))) {
@@ -1071,7 +1072,7 @@ int ObInnerSQLConnection::start_transaction_inner(
       }
     }
   }
-
+LOG_INFO("ObInnerSQLConnection::start_transaction end");
   return ret;
 }
 
@@ -1395,10 +1396,12 @@ int ObInnerSQLConnection::commit()
 int ObInnerSQLConnection::execute_write(const uint64_t tenant_id, const char *sql,
   int64_t &affected_rows, bool is_user_sql, const common::ObAddr *sql_exec_addr)
 {
+  LOG_INFO("ObInnerSQLConnection::execute_write begin");
   int ret = OB_SUCCESS;
   if (OB_FAIL(execute_write(tenant_id, ObString::make_string(sql), affected_rows, is_user_sql, sql_exec_addr))) {
     LOG_WARN("execute_write failed", K(ret), K(tenant_id), K(sql));
   }
+  LOG_INFO("ObInnerSQLConnection::execute_write end");
   return ret;
 }
 

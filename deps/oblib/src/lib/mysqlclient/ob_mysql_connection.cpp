@@ -284,6 +284,7 @@ void ObMySQLConnection::close()
 
 int ObMySQLConnection::start_transaction(const uint64_t &tenant_id, bool with_snap_shot/* = false*/)
 {
+  LOG_INFO("ObMySQLConnection::start_transaction begin");
   int ret = OB_SUCCESS;
   // FIXME:(yanmu.ztl) not supported yet
   UNUSED(tenant_id);
@@ -301,6 +302,7 @@ int ObMySQLConnection::start_transaction(const uint64_t &tenant_id, bool with_sn
       LOG_WARN("fail to start transaction", "info", mysql_error(&mysql_), K(ret));
     }
   }
+   LOG_INFO("ObMySQLConnection::start_transaction end");
   return ret;
 }
 
@@ -453,6 +455,7 @@ int ObMySQLConnection::init_oceanbase_connection()
 
 int ObMySQLConnection::switch_tenant(const uint64_t tenant_id)
 {
+  LOG_INFO("ObMySQLConnection::switch_tenant begin");
   int ret = OB_SUCCESS;
   if (tenant_id_ != tenant_id && OB_INVALID_TENANT_ID != tenant_id) {
     ObMySQLStatement stmt;
@@ -481,6 +484,7 @@ int ObMySQLConnection::switch_tenant(const uint64_t tenant_id)
       tenant_id_ = tenant_id;
     }
   }
+  LOG_INFO("ObMySQLConnection::switch_tenant end");
   return ret;
 }
 
@@ -494,6 +498,7 @@ int ObMySQLConnection::execute_write(const uint64_t tenant_id, const ObString &s
 int ObMySQLConnection::execute_write(const uint64_t tenant_id, const char *sql,
     int64_t &affected_rows, bool is_user_sql, const common::ObAddr *sql_exec_addr)
 {
+  LOG_INFO("ObMySQLConnection::execute_write begin");
   UNUSED(is_user_sql);
   UNUSED(sql_exec_addr);
   int ret = OB_SUCCESS;
@@ -508,6 +513,7 @@ int ObMySQLConnection::execute_write(const uint64_t tenant_id, const char *sql,
       LOG_WARN("statement execute update failed", KCSTRING(sql), K(ret));
     }
   }
+   LOG_INFO("ObMySQLConnection::execute_write end");
   return ret;
 }
 

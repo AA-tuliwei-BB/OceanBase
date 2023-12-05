@@ -147,9 +147,76 @@ int ObLSRecoveryStatOperator::create_new_ls(const ObLSStatusInfo &ls_info,
             ls_info.ls_id_.id(), create_ls_scn.get_val_for_inner_table_field(),
             init_scn_value, init_scn_value, init_scn_value))) {
       LOG_WARN("failed to assing sql", KR(ret), K(ls_info), K(create_ls_scn), K(init_scn_value));
-    } else if (OB_FAIL(exec_write(ls_info.tenant_id_, sql, this, trans))) {
+    } 
+    //顺便写入系统租户
+    else 
+    
+    {   LOG_INFO("lsrecoveryop exec_write begin");
+      if (OB_FAIL(exec_write(ls_info.tenant_id_, sql, this, trans))) {
       LOG_WARN("failed to exec write", KR(ret), K(ls_info), K(sql));
     }
+     LOG_INFO("lsrecoveryop exec_write end");
+    }
+//MYCHANGE
+// if(ls_info.tenant_id_!=1)
+// {
+//      if (OB_FAIL(exec_write(OB_SYS_TENANT_ID, sql, this, trans))) {
+//       LOG_WARN("failed to exec write sys tenant all-ls-recovery", KR(ret), K(ls_info), K(sql));
+//     }
+
+// }
+
+
+
+    LOG_INFO("[LS_RECOVERY] create new ls", KR(ret), K(ls_info), K(create_ls_scn), K(init_scn));
+  }
+  return ret;
+}
+
+int ObLSRecoveryStatOperator::create_new_ls1(const ObLSStatusInfo &ls_info,
+                                            const SCN &create_ls_scn,
+                                            const common::ObString &zone_priority,
+                                            const share::ObTenantSwitchoverStatus &working_sw_status,
+                                            ObMySQLTransaction &trans)
+{
+  UNUSEDx(zone_priority, working_sw_status);
+  int ret = OB_SUCCESS;
+  if (OB_UNLIKELY(!ls_info.is_valid() || !create_ls_scn.is_valid())) {
+    ret = OB_INVALID_ARGUMENT;
+    LOG_WARN("invalid_argument", KR(ret), K(ls_info));
+  } else {
+    common::ObSqlString sql;
+    SCN init_scn = SCN::base_scn();
+    const uint64_t init_scn_value = init_scn.get_val_for_inner_table_field();
+    if (OB_FAIL(sql.assign_fmt(
+            "INSERT into %s (tenant_id, ls_id, create_scn, "
+            "sync_scn, readable_scn, drop_scn) "
+            "values (%lu, %ld, '%lu', '%lu', '%lu', '%lu')",
+            OB_ALL_LS_RECOVERY_STAT_TNAME, ls_info.tenant_id_,
+            ls_info.ls_id_.id(), create_ls_scn.get_val_for_inner_table_field(),
+            init_scn_value, init_scn_value, init_scn_value))) {
+      LOG_WARN("failed to assing sql", KR(ret), K(ls_info), K(create_ls_scn), K(init_scn_value));
+    } 
+    //顺便写入系统租户
+    else 
+    
+    {   LOG_INFO("lsrecoveryop exec_write begin");
+      if (OB_FAIL(exec_write(ls_info.tenant_id_, sql, this, trans))) {
+      LOG_WARN("failed to exec write", KR(ret), K(ls_info), K(sql));
+    }
+     LOG_INFO("lsrecoveryop exec_write end");
+    }
+//MYCHANGE
+// if(ls_info.tenant_id_!=1)
+// {
+//      if (OB_FAIL(exec_write(OB_SYS_TENANT_ID, sql, this, trans))) {
+//       LOG_WARN("failed to exec write sys tenant all-ls-recovery", KR(ret), K(ls_info), K(sql));
+//     }
+
+// }
+
+
+
     LOG_INFO("[LS_RECOVERY] create new ls", KR(ret), K(ls_info), K(create_ls_scn), K(init_scn));
   }
   return ret;
@@ -340,6 +407,44 @@ int ObLSRecoveryStatOperator::get_ls_recovery_stat(
     } else if (need_for_update && OB_FAIL(sql.append(" for update"))) {
       LOG_WARN("failed to append sql", KR(ret), K(sql), K(need_for_update));
     } else if (OB_FAIL(exec_read(tenant_id, sql, client, this, ls_recovery_array))) {
+      LOG_WARN("failed to read ls recovery", KR(ret), K(tenant_id), K(sql));
+    } else if (0 == ls_recovery_array.count()) {
+      ret = OB_ENTRY_NOT_EXIST;
+      LOG_WARN("ls not exist", KR(ret), K(tenant_id), K(ls_id));
+    } else if (OB_UNLIKELY(1 != ls_recovery_array.count())) {
+      ret = OB_ERR_UNEXPECTED;
+      LOG_ERROR("more than one ls is unexpected", KR(ret), K(ls_recovery_array), K(sql));
+    } else if (OB_FAIL(ls_recvery.assign(ls_recovery_array.at(0)))) {
+      LOG_WARN("failed to assign ls attr", KR(ret), K(ls_recovery_array));
+    }
+  }
+
+  return ret;
+}
+
+//读取系统租户的all_ls_recovery表
+int ObLSRecoveryStatOperator::get_ls_recovery_stat1(
+      const uint64_t &tenant_id,
+      const share::ObLSID &ls_id,
+      const bool need_for_update,
+      ObLSRecoveryStat &ls_recvery, 
+      ObISQLClient &client)
+{
+  int ret = OB_SUCCESS;
+  if (OB_UNLIKELY(!ls_id.is_valid() || OB_INVALID_TENANT_ID == tenant_id)) {
+    ret = OB_INVALID_ARGUMENT;
+    LOG_WARN("invalid_argument", KR(ret), K(ls_id), K(tenant_id));
+  } else {
+    common::ObSqlString sql;
+    ObSEArray<ObLSRecoveryStat, 1> ls_recovery_array;
+    if (OB_FAIL(sql.assign_fmt("select * from %s where ls_id = %ld and tenant_id = %lu",
+               OB_ALL_LS_RECOVERY_STAT_TNAME, ls_id.id(), tenant_id))) {
+      LOG_WARN("failed to assign sql", KR(ret), K(sql));
+    } else if (need_for_update && OB_FAIL(sql.append(" for update"))) {
+      LOG_WARN("failed to append sql", KR(ret), K(sql), K(need_for_update));
+    } 
+    //MYCHANGE
+    else if (OB_FAIL(exec_read(OB_SYS_TENANT_ID, sql, client, this, ls_recovery_array))) {
       LOG_WARN("failed to read ls recovery", KR(ret), K(tenant_id), K(sql));
     } else if (0 == ls_recovery_array.count()) {
       ret = OB_ENTRY_NOT_EXIST;

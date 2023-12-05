@@ -282,6 +282,12 @@ private:
       ObMySQLTransaction &trans,
       ObSqlString &sql,
       const bool is_multi_rows_affected);
+
+
+   static int exec_write1(
+      ObMySQLTransaction &trans,
+      ObSqlString &sql,
+      const bool is_multi_rows_affected);
   static int insert_dml_builder(
     const ObServerStatus &server_status,
     ObDMLSqlSplicer &dml);

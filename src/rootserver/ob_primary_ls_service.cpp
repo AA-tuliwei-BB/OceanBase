@@ -72,7 +72,7 @@ void ObPrimaryLSService::do_work()
   } else if (OB_FAIL(wait_tenant_schema_and_version_ready_(tenant_id_, DATA_VERSION_4_1_0_0))) {
     LOG_WARN("failed to wait tenant schema version ready", KR(ret), K(tenant_id_), K(DATA_CURRENT_VERSION));
   } else {
-    int64_t idle_time_us = 0.1 * 1000 * 1000L; // MYCHANGE
+    int64_t idle_time_us = 0.1 * 1000 * 1000L; 
     int tmp_ret = OB_SUCCESS;
     share::schema::ObTenantSchema tenant_schema;
     while (!has_set_stop()) {
@@ -236,6 +236,7 @@ int ObPrimaryLSService::set_tenant_dropping_status_(
 int ObPrimaryLSService::try_set_next_ls_status_(
     const common::ObIArray<ObLSStatusMachineParameter> &status_machine_array)
 {
+  LOG_INFO("ObPrimaryLSService::try_set_next_ls_status_ begin");
   int ret = OB_SUCCESS;
   if (OB_UNLIKELY(!inited_)) {
     ret = OB_NOT_INIT;
@@ -271,11 +272,16 @@ int ObPrimaryLSService::try_set_next_ls_status_(
             LOG_WARN("failed to process creating info", KR(ret), K(machine));
           }
         } else if (status_info.ls_is_created()) {
+          LOG_INFO("set ls to normal begin");
+        //可疑的切换租户位置
+        //ls_operator是由租户id和proxy初始化的
           //set ls to normal
           if (OB_FAIL(ls_operator.update_ls_status(
                   machine.ls_id_, ls_info.get_ls_status(), share::OB_LS_NORMAL, working_sw_status))) {
             LOG_WARN("failed to update ls status", KR(ret), K(machine));
           }
+
+          LOG_INFO("set ls to normal end");
         } else if (status_info.ls_is_creating()) {
         } else {
           ret = OB_ERR_UNEXPECTED;
@@ -319,6 +325,7 @@ int ObPrimaryLSService::try_set_next_ls_status_(
     ret = OB_IN_STOP_STATE;
     LOG_WARN("[PRIMARY_LS_SERVICE] thread stop", KR(ret));
   }
+  LOG_INFO("ObPrimaryLSService::try_set_next_ls_status_ end");
   return ret;
 }
 
@@ -473,6 +480,7 @@ int ObPrimaryLSService::process_all_ls_status_to_steady_(const share::schema::Ob
 //the interface may reentry
 int ObPrimaryLSService::create_ls_for_create_tenant()
 {
+  LOG_INFO("ObPrimaryLSService::create_ls_for_create_tenant begin");
   int ret = OB_SUCCESS;
   share::schema::ObTenantSchema tenant_schema;
   ObArray<ObZone> primary_zone;
@@ -528,6 +536,7 @@ int ObPrimaryLSService::create_ls_for_create_tenant()
     }
     END_TRANSACTION(trans)
   }
+  LOG_INFO(" ObPrimaryLSService::create_ls_for_create_tenant end");
   return ret;
 }
 

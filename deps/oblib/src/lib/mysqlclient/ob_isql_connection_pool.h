@@ -10,6 +10,20 @@
  * See the Mulan PubL v2 for more details.
  */
 
+
+
+//MYCHANGE
+/*ObISQLConnectionPool是一个纯虚接口类，用于定义SQL连接池的操作。它包含了一些纯虚函数，如escape、acquire、release等，用于执行SQL字符串转义、获取和释放连接等操作。
+ObConnPoolConfigParam是一个结构体，用于存储连接池的配置参数，如等待超时时间、连接刷新间隔、长查询超时时间等。
+ObISQLConnection是一个虚接口类，用于定义SQL连接的操作。
+ObSQLConnPoolType是一个枚举类型，定义了连接池的类型，包括未知类型、MySQL连接池和内部连接池。
+DblinkDriverProto是一个枚举类型，定义了数据库链接驱动的协议类型，包括未知类型、OB驱动和OCI驱动。
+DblinkPoolType是一个枚举类型，定义了数据库链接池的类型，包括未知类型、默认池和模式池。
+dblink_param_ctx是一个结构体，用于存储与数据库链接相关的参数，如字符集ID、链接类型、会话ID、租户ID等。
+这段代码的作用是定义了一个通用的SQL连接池接口，并提供了一些相关的结构体和枚举类型，用于支持连接池的配置和数据库链接的管理。具体的实现逻辑和功能需要在其他文件中进行实现。*/
+
+
+
 #ifndef OCEANBASE_MYSQLCLIENT_OB_ISQL_CONNECTION_POOL_H_
 #define OCEANBASE_MYSQLCLIENT_OB_ISQL_CONNECTION_POOL_H_
 

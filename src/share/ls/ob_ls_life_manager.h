@@ -64,6 +64,13 @@ public:
     MAX_AGENT_NUM
   };
 public:
+
+int create_new_ls_in_trans1(const ObLSStatusInfo &ls_info,
+                            const SCN &create_ls_scn,
+                            const common::ObString &zone_priority,
+                            const share::ObTenantSwitchoverStatus &working_sw_status,
+                            ObMySQLTransaction &trans);
+
   /*
    * description: for primary cluster, create new ls
    * @param[in]ls_info:new ls status info for __all_ls_status
@@ -75,6 +82,8 @@ public:
                     const SCN &create_ls_scn,\
                     const common::ObString &zone_priority,\
                     const share::ObTenantSwitchoverStatus &working_sw_status)
+
+
   /*
    * description: for primary cluster and GC of standby, delete ls from each inner_table
    * @param[in] tenant_id: tenant_id

@@ -174,6 +174,7 @@ int ObLSStatusOperator::create_new_ls(const ObLSStatusInfo &ls_info,
                                       const share::ObTenantSwitchoverStatus &working_sw_status,
                                       ObMySQLTransaction &trans)
 {
+  LOG_INFO("lsstatusop create_new_ls begin");
   UNUSEDx(current_tenant_scn, zone_priority);
   int ret = OB_SUCCESS;
   ObAllTenantInfo tenant_info;
@@ -203,8 +204,12 @@ int ObLSStatusOperator::create_new_ls(const ObLSStatusInfo &ls_info,
     }
   }
 
+
   if (OB_FAIL(ret)) {
+    LOG_INFO("lsstatusop error ret");
+
   } else {
+    LOG_INFO("lsstatusop exec_write begin");
     ObDMLSqlSplicer dml_splicer;
     if (OB_FAIL(dml_splicer.add_pk_column("tenant_id", ls_info.tenant_id_))
       || OB_FAIL(dml_splicer.add_pk_column("ls_id", ls_info.ls_id_.id()))
@@ -217,9 +222,51 @@ int ObLSStatusOperator::create_new_ls(const ObLSStatusInfo &ls_info,
       LOG_WARN("add flag column failed", KR(ret), K(ls_info), K(flag_str));
     } else if (OB_FAIL(dml_splicer.splice_insert_sql(table_name, sql))) {
       LOG_WARN("fail to splice insert sql", KR(ret), K(sql), K(ls_info), K(flag_str));
-    } else if (OB_FAIL(exec_write(ls_info.tenant_id_, sql, this, trans))) {
+    } 
+    //顺便写入系统租户?但是本身在系统租户
+
+    //疯狂改动
+    
+//       else{
+// share::ObLSStatusInfo new_info;
+//       new_info.init(OB_SYS_TENANT_ID, ls_info.ls_id_,
+//                               ls_info.ls_group_id_,
+//                              ls_info.status_,
+//                               ls_info.unit_group_id_,
+//                               ls_info.primary_zone_, ls_info.flag_);
+      
+      
+//       if (OB_FAIL(exec_write(new_info.tenant_id_, sql, this, trans))) {
+
+//       LOG_WARN("failed to exec write", KR(ret), K(ls_info), K(sql));
+//     } 
+
+
+//     else if (ls_info.ls_id_.is_sys_ls()) {
+//       LOG_INFO("sys ls no need update max ls id", KR(ret), K(ls_info));
+//     } else if (OB_FAIL(ObAllTenantInfoProxy::update_tenant_max_ls_id(
+//                    ls_info.tenant_id_, ls_info.ls_id_, trans, false))) {
+//       LOG_WARN("failed to update tenant max ls id", KR(ret), K(ls_info));
+//     }
+//     }
+    
+
+  else
+        if(OB_FAIL(exec_write(ls_info.tenant_id_,sql, this, trans))) {
+
       LOG_WARN("failed to exec write", KR(ret), K(ls_info), K(sql));
-    } else if (ls_info.ls_id_.is_sys_ls()) {
+    } 
+
+//这波输入exec_write参数除了this都是OB_SYS_TENANT_ID相关，这再报错没道理的
+    // else         
+    //     if(OB_FAIL(exec_write(OB_SYS_TENANT_ID, sql, this, trans))) {
+
+    //   LOG_WARN("failed to exec write", KR(ret), K(ls_info), K(sql));
+    // } 
+    
+
+
+    else if (ls_info.ls_id_.is_sys_ls()) {
       LOG_INFO("sys ls no need update max ls id", KR(ret), K(ls_info));
     } else if (OB_FAIL(ObAllTenantInfoProxy::update_tenant_max_ls_id(
                    ls_info.tenant_id_, ls_info.ls_id_, trans, false))) {
@@ -227,6 +274,220 @@ int ObLSStatusOperator::create_new_ls(const ObLSStatusInfo &ls_info,
     }
   }
 
+// //成功的改动
+//     LOG_INFO("lsstatusop exec_write begin");
+//     ObDMLSqlSplicer dml_splicer1;
+//     if (OB_FAIL(dml_splicer1.add_pk_column("tenant_id", 123456789))
+//       || OB_FAIL(dml_splicer1.add_pk_column("ls_id", ls_info.ls_id_.id()))
+//       || OB_FAIL(dml_splicer1.add_column("status", ls_status_to_str(ls_info.status_)))
+//       || OB_FAIL(dml_splicer1.add_column("ls_group_id", ls_info.ls_group_id_))
+//       || OB_FAIL(dml_splicer1.add_column("unit_group_id", ls_info.unit_group_id_))
+//       || OB_FAIL(dml_splicer1.add_column("primary_zone", ls_info.primary_zone_.ptr()))) {
+//       LOG_WARN("add columns failed", KR(ret), K(ls_info));
+//     } else if (!ls_info.get_flag().is_normal_flag() && OB_FAIL(dml_splicer1.add_column("flag", flag_str.ptr()))) {
+//       LOG_WARN("add flag column failed", KR(ret), K(ls_info), K(flag_str));
+//     } else if (OB_FAIL(dml_splicer1.splice_insert_sql(table_name, sql))) {
+//       LOG_WARN("fail to splice insert sql", KR(ret), K(sql), K(ls_info), K(flag_str));
+//     } 
+//     //顺便写入系统租户?但是是靠事务写的
+
+//     //疯狂改动
+//     else
+      
+//       if (OB_FAIL(exec_write(123456789, sql, this, trans))) {
+
+//       LOG_WARN("failed to exec write", KR(ret), K(ls_info), K(sql));
+//     } 
+
+
+//     else if (ls_info.ls_id_.is_sys_ls()) {
+//       LOG_INFO("sys ls no need update max ls id", KR(ret), K(ls_info));
+//     } else if (OB_FAIL(ObAllTenantInfoProxy::update_tenant_max_ls_id(
+//                    ls_info.tenant_id_, ls_info.ls_id_, trans, false))) {
+//       LOG_WARN("failed to update tenant max ls id", KR(ret), K(ls_info));
+    
+//   }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+LOG_INFO("lsstatusop exec_write end", KR(ret),K(ls_info), K(sql));
+  ALL_LS_EVENT_ADD(ls_info.tenant_id_, ls_info.ls_id_, "create_new_ls", ret, sql);
+  return ret;
+}
+
+
+int ObLSStatusOperator::create_new_ls1(const ObLSStatusInfo &ls_info,
+                                      const SCN &current_tenant_scn,
+                                      const common::ObString &zone_priority,
+                                      const share::ObTenantSwitchoverStatus &working_sw_status,
+                                      ObMySQLTransaction &trans)
+{
+  LOG_INFO("lsstatusop create_new_ls1 begin");
+  UNUSEDx(current_tenant_scn, zone_priority);
+  int ret = OB_SUCCESS;
+  ObAllTenantInfo tenant_info;
+  ObLSFlagStr flag_str;
+  common::ObSqlString sql;
+  const char *table_name = OB_ALL_LS_STATUS_TNAME;
+  if (OB_UNLIKELY(!ls_info.is_valid()
+                  || !working_sw_status.is_valid())) {
+    ret = OB_INVALID_ARGUMENT;
+    LOG_WARN("invalid_argument", KR(ret), K(ls_info), K(working_sw_status));
+  } else if (OB_FAIL(ObAllTenantInfoProxy::load_tenant_info(
+                  ls_info.tenant_id_, &trans, true, tenant_info))) {
+    LOG_WARN("failed to load tenant info", KR(ret), K(ls_info));
+  } else if (working_sw_status != tenant_info.get_switchover_status()) {
+    ret = OB_NEED_RETRY;
+    LOG_WARN("tenant not in specified switchover status", K(ls_info), K(working_sw_status), K(tenant_info));
+  } else if (OB_FAIL(ls_info.get_flag().flag_to_str(flag_str))) {
+    LOG_WARN("fail to convert ls flag into string", KR(ret), K(ls_info));
+  } else if (ls_info.get_flag().is_duplicate_ls()) {
+    bool is_compatible = false;
+    if (OB_FAIL(ObShareUtil::check_compat_version_for_readonly_replica(
+                     ls_info.tenant_id_, is_compatible))) {
+      LOG_WARN("fail to check data version for duplicate table", KR(ret), K(ls_info));
+    } else if (!is_compatible) {
+      ret = OB_STATE_NOT_MATCH;
+      LOG_WARN("ls flag is not empty", KR(ret), K(ls_info), K(is_compatible));
+    }
+  }
+
+
+  if (OB_FAIL(ret)) {
+    LOG_INFO("lsstatusop error ret");
+
+  } else {
+    LOG_INFO("lsstatusop exec_write begin");
+    ObDMLSqlSplicer dml_splicer;
+    if (OB_FAIL(dml_splicer.add_pk_column("tenant_id", ls_info.tenant_id_))
+      || OB_FAIL(dml_splicer.add_pk_column("ls_id", ls_info.ls_id_.id()))
+      || OB_FAIL(dml_splicer.add_column("status", ls_status_to_str(ls_info.status_)))
+      || OB_FAIL(dml_splicer.add_column("ls_group_id", ls_info.ls_group_id_))
+      || OB_FAIL(dml_splicer.add_column("unit_group_id", ls_info.unit_group_id_))
+      || OB_FAIL(dml_splicer.add_column("primary_zone", ls_info.primary_zone_.ptr()))) {
+      LOG_WARN("add columns failed", KR(ret), K(ls_info));
+    } else if (!ls_info.get_flag().is_normal_flag() && OB_FAIL(dml_splicer.add_column("flag", flag_str.ptr()))) {
+      LOG_WARN("add flag column failed", KR(ret), K(ls_info), K(flag_str));
+    } else if (OB_FAIL(dml_splicer.splice_insert_sql(table_name, sql))) {
+      LOG_WARN("fail to splice insert sql", KR(ret), K(sql), K(ls_info), K(flag_str));
+    } 
+    //顺便写入系统租户?但是本身在系统租户
+
+    //疯狂改动
+    
+//       else{
+// share::ObLSStatusInfo new_info;
+//       new_info.init(OB_SYS_TENANT_ID, ls_info.ls_id_,
+//                               ls_info.ls_group_id_,
+//                              ls_info.status_,
+//                               ls_info.unit_group_id_,
+//                               ls_info.primary_zone_, ls_info.flag_);
+      
+      
+//       if (OB_FAIL(exec_write(new_info.tenant_id_, sql, this, trans))) {
+
+//       LOG_WARN("failed to exec write", KR(ret), K(ls_info), K(sql));
+//     } 
+
+
+//     else if (ls_info.ls_id_.is_sys_ls()) {
+//       LOG_INFO("sys ls no need update max ls id", KR(ret), K(ls_info));
+//     } else if (OB_FAIL(ObAllTenantInfoProxy::update_tenant_max_ls_id(
+//                    ls_info.tenant_id_, ls_info.ls_id_, trans, false))) {
+//       LOG_WARN("failed to update tenant max ls id", KR(ret), K(ls_info));
+//     }
+//     }
+    
+
+  // else
+  //       if(OB_FAIL(exec_write(ls_info.tenant_id_, sql, this, trans))) {
+
+  //     LOG_WARN("failed to exec write", KR(ret), K(ls_info), K(sql));
+  //   } 
+
+//这波输入exec_write参数除了this都是OB_SYS_TENANT_ID相关，这再报错没道理的
+//还真报错了，还是try to switch ....
+    else         
+        if(OB_FAIL(exec_write(OB_SYS_TENANT_ID, sql, this, trans))) {
+
+      LOG_WARN("failed to exec write", KR(ret), K(ls_info), K(sql));
+    } 
+    
+
+
+    else if (ls_info.ls_id_.is_sys_ls()) {
+      LOG_INFO("sys ls no need update max ls id", KR(ret), K(ls_info));
+    } else if (OB_FAIL(ObAllTenantInfoProxy::update_tenant_max_ls_id(
+                   ls_info.tenant_id_, ls_info.ls_id_, trans, false))) {
+      LOG_WARN("failed to update tenant max ls id", KR(ret), K(ls_info));
+    }
+  }
+
+// //成功的改动
+//     LOG_INFO("lsstatusop exec_write begin");
+//     ObDMLSqlSplicer dml_splicer1;
+//     if (OB_FAIL(dml_splicer1.add_pk_column("tenant_id", 123456789))
+//       || OB_FAIL(dml_splicer1.add_pk_column("ls_id", ls_info.ls_id_.id()))
+//       || OB_FAIL(dml_splicer1.add_column("status", ls_status_to_str(ls_info.status_)))
+//       || OB_FAIL(dml_splicer1.add_column("ls_group_id", ls_info.ls_group_id_))
+//       || OB_FAIL(dml_splicer1.add_column("unit_group_id", ls_info.unit_group_id_))
+//       || OB_FAIL(dml_splicer1.add_column("primary_zone", ls_info.primary_zone_.ptr()))) {
+//       LOG_WARN("add columns failed", KR(ret), K(ls_info));
+//     } else if (!ls_info.get_flag().is_normal_flag() && OB_FAIL(dml_splicer1.add_column("flag", flag_str.ptr()))) {
+//       LOG_WARN("add flag column failed", KR(ret), K(ls_info), K(flag_str));
+//     } else if (OB_FAIL(dml_splicer1.splice_insert_sql(table_name, sql))) {
+//       LOG_WARN("fail to splice insert sql", KR(ret), K(sql), K(ls_info), K(flag_str));
+//     } 
+//     //顺便写入系统租户?但是是靠事务写的
+
+//     //疯狂改动
+//     else
+      
+//       if (OB_FAIL(exec_write(123456789, sql, this, trans))) {
+
+//       LOG_WARN("failed to exec write", KR(ret), K(ls_info), K(sql));
+//     } 
+
+
+//     else if (ls_info.ls_id_.is_sys_ls()) {
+//       LOG_INFO("sys ls no need update max ls id", KR(ret), K(ls_info));
+//     } else if (OB_FAIL(ObAllTenantInfoProxy::update_tenant_max_ls_id(
+//                    ls_info.tenant_id_, ls_info.ls_id_, trans, false))) {
+//       LOG_WARN("failed to update tenant max ls id", KR(ret), K(ls_info));
+    
+//   }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+LOG_INFO("lsstatusop exec_write end", KR(ret),K(ls_info), K(sql));
   ALL_LS_EVENT_ADD(ls_info.tenant_id_, ls_info.ls_id_, "create_new_ls", ret, sql);
   return ret;
 }
@@ -348,6 +609,50 @@ int ObLSStatusOperator::update_ls_status(
   return ret;
 }
 
+
+
+
+//12.4/19.55尝试修改
+int ObLSStatusOperator::update_ls_status1(
+    const uint64_t tenant_id,
+    const ObLSID &id, const ObLSStatus &old_status,
+    const ObLSStatus &new_status,
+    const ObTenantSwitchoverStatus &switch_status,
+    ObMySQLProxy &client)
+{
+  int ret = OB_SUCCESS;
+  if (OB_UNLIKELY(!id.is_valid()
+                  || ls_is_invalid_status(new_status)
+                  || ls_is_invalid_status(old_status)
+                  || OB_INVALID_TENANT_ID == tenant_id
+                  || !switch_status.is_valid())) {
+    ret = OB_INVALID_ARGUMENT;
+    LOG_WARN("invalid_argument", KR(ret), K(id), K(new_status), K(old_status),
+             K(tenant_id), K(switch_status));
+  } else {
+    //init_member_list is no need after create success
+    ObMySQLTransaction trans;
+    const uint64_t exec_tenant_id =
+     OB_SYS_TENANT_ID;
+     //这里引入一个OB_SYS_TENANT_ID的事务
+    if (OB_FAIL(trans.start(&client, exec_tenant_id))) {
+      LOG_WARN("failed to start trans", KR(ret), K(exec_tenant_id));
+    } else if (OB_FAIL(update_ls_status_in_trans(tenant_id, id, old_status, new_status, switch_status, trans))) {
+      LOG_WARN("failed to update ls status in trans", KR(ret), K(tenant_id), K(id), K(old_status), K(new_status), K(switch_status));
+    }
+    if (trans.is_started()) {
+      int tmp_ret = OB_SUCCESS;
+      if (OB_SUCCESS != (tmp_ret = trans.end(OB_SUCC(ret)))) {
+        LOG_WARN("failed to commit trans", KR(ret), KR(tmp_ret));
+        ret = OB_SUCC(ret) ? tmp_ret : ret;
+      }
+    }
+  }
+  return ret;
+}
+
+
+
 int ObLSStatusOperator::update_ls_status_in_trans(
     const uint64_t tenant_id,
     const ObLSID &id, const ObLSStatus &old_status,
@@ -397,14 +702,106 @@ int ObLSStatusOperator::update_ls_status_in_trans(
                                id.id(), tenant_id, ls_status_to_str(old_status)))) {
       LOG_WARN("failed to assign sql", KR(ret), K(id), K(new_status),
                K(old_status), K(tenant_id), K(sub_string), K(sql));
-    } else if (OB_FAIL(exec_write(tenant_id, sql, this, trans))) {
+    } 
+    else if (OB_FAIL(exec_write(tenant_id, sql, this, trans))) {
       LOG_WARN("failed to exec write", KR(ret), K(tenant_id), K(id), K(sql));
     }
+
+
+    // else if (OB_FAIL(exec_write(OB_SYS_TENANT_ID, sql, this, trans))) {
+    //   LOG_WARN("failed to exec write", KR(ret), K(tenant_id), K(id), K(sql));
+    // }
+    //这段修改会报错，try to switch to another tenant without commit/rollback in a transaction not supported
+
+
+
+  
+
+
     ALL_LS_EVENT_ADD(tenant_id, id, "update_ls_status", ret, sql);
   }
   return ret;
 }
 
+
+
+
+
+
+
+
+
+
+int ObLSStatusOperator::update_ls_status_in_trans1(
+    const uint64_t tenant_id,
+    const ObLSID &id, const ObLSStatus &old_status,
+    const ObLSStatus &new_status,
+    const ObTenantSwitchoverStatus &switch_status,
+    ObMySQLTransaction &trans)
+{
+  int ret = OB_SUCCESS;
+  ObAllTenantInfo tenant_info;
+  if (OB_UNLIKELY(!id.is_valid()
+                  || ls_is_invalid_status(new_status)
+                  || ls_is_invalid_status(old_status)
+                  || OB_INVALID_TENANT_ID == tenant_id
+                  || !switch_status.is_valid())) {
+    ret = OB_INVALID_ARGUMENT;
+    LOG_WARN("invalid_argument", KR(ret), K(id), K(new_status), K(old_status),
+             K(tenant_id), K(switch_status));
+  } else if (OB_FAIL(ObAllTenantInfoProxy::load_tenant_info(
+                   tenant_id, &trans, true, tenant_info))) {
+    LOG_WARN("failed to load tenant info", KR(ret), K(tenant_id));
+  } else if (switch_status != tenant_info.get_switchover_status()) {
+    ret = OB_NEED_RETRY;
+    LOG_WARN("tenant not expect switchover status", KR(ret), K(tenant_info));
+  } else {
+    //init_member_list is no need after create success
+    common::ObSqlString sql;
+    const uint64_t exec_tenant_id =
+      OB_SYS_TENANT_ID;
+    common::ObSqlString sub_string;
+    bool is_compatible_with_readonly_replica = false;
+    int tmp_ret = OB_SUCCESS;
+    if (OB_SUCCESS != (tmp_ret = ObShareUtil::check_compat_version_for_readonly_replica(
+                                 exec_tenant_id, is_compatible_with_readonly_replica))) {
+      LOG_WARN("fail to check tenant compat version with readonly replica", KR(tmp_ret), K(exec_tenant_id));
+    } else if (is_compatible_with_readonly_replica
+               && OB_SUCCESS != (tmp_ret = sub_string.assign(", init_learner_list = '', b_init_learner_list = ''"))) {
+      LOG_WARN("fail to construct substring for learner list", KR(tmp_ret));
+      sub_string.reset();
+    }
+
+    if (OB_FAIL(ret)) {
+    } else if (OB_FAIL(sql.assign_fmt("UPDATE %s set status = '%s',init_member_list = '', b_init_member_list = ''%.*s"
+                               " where ls_id = %ld and tenant_id = %lu and status = '%s'",
+                               OB_ALL_LS_STATUS_TNAME,
+                               ls_status_to_str(new_status),
+                               static_cast<int>(sub_string.length()), sub_string.ptr(),
+                               id.id(), tenant_id, ls_status_to_str(old_status)))) {
+      LOG_WARN("failed to assign sql", KR(ret), K(id), K(new_status),
+               K(old_status), K(tenant_id), K(sub_string), K(sql));
+    } 
+    //没道理再报错了吧，我trans和OB_SYS_TENANT_ID都一个id
+    else if (OB_FAIL(exec_write1(OB_SYS_TENANT_ID, sql, this, trans))) {
+      LOG_WARN("failed to exec write1", KR(ret), K(tenant_id), K(id), K(sql));
+    }
+
+
+    // else if (OB_FAIL(exec_write(OB_SYS_TENANT_ID, sql, this, trans))) {
+    //   LOG_WARN("failed to exec write", KR(ret), K(tenant_id), K(id), K(sql));
+    // }
+    //这段修改会报错，try to switch to another tenant without commit/rollback in a transaction not supported
+
+
+
+  
+
+
+    ALL_LS_EVENT_ADD(tenant_id, id, "update_ls_status", ret, sql);
+  }
+  return ret;
+}
 
 int ObLSStatusOperator::alter_ls_group_id(const uint64_t tenant_id, const ObLSID &id,
                        const uint64_t old_ls_group_id,
@@ -539,6 +936,7 @@ int ObLSStatusOperator::update_init_member_list(
   return ret;
 }
 
+//读取系统租户内all_ls_status表数据
 int ObLSStatusOperator::get_all_ls_status_by_order(
     const uint64_t tenant_id,
     ObLSStatusInfoIArray &ls_array, ObISQLClient &client)
@@ -554,18 +952,27 @@ int ObLSStatusOperator::get_all_ls_status_by_order(
                    "SELECT * FROM %s WHERE tenant_id = %lu ORDER BY tenant_id, ls_id",
                    OB_ALL_LS_STATUS_TNAME, tenant_id))) {
       LOG_WARN("failed to assign sql", KR(ret), K(sql), K(tenant_id));
-    } else if (OB_FAIL(exec_read(tenant_id, sql, client, this, ls_array))) {
+    }
+   
+     else if (OB_FAIL(exec_read(tenant_id,sql, client, this, ls_array))) {
       LOG_WARN("failed to exec read", KR(ret), K(tenant_id), K(sql));
     }
+
+    // MYCHANGE
+    // else if (OB_FAIL(exec_read(OB_SYS_TENANT_ID, sql, client, this, ls_array))) {
+    //   LOG_WARN("failed to exec read", KR(ret), K(tenant_id), K(sql));
+    // }
+
   }
   return ret;
 }
 
-
+//读取系统租户内all_ls_status表数据
 int ObLSStatusOperator::get_all_ls_status_by_order1(
     const uint64_t tenant_id,
     ObLSStatusInfoIArray &ls_array, ObISQLClient &client)
 {
+  LOG_INFO("get all ls status by order1 start");
   int ret = OB_SUCCESS;
   ls_array.reset();
   if (OB_UNLIKELY(OB_INVALID_TENANT_ID == tenant_id)) {
@@ -577,10 +984,13 @@ int ObLSStatusOperator::get_all_ls_status_by_order1(
                    "SELECT * FROM %s WHERE tenant_id = %lu ORDER BY tenant_id, ls_id",
                    OB_ALL_LS_STATUS_TNAME, tenant_id))) {
       LOG_WARN("failed to assign sql", KR(ret), K(sql), K(tenant_id));
-    } else if (OB_FAIL(exec_read1(tenant_id, sql, client, this, ls_array))) {
+    } 
+    //MYCHANGE
+    else if (OB_FAIL(exec_read(OB_SYS_TENANT_ID, sql, client, this, ls_array))) {
       LOG_WARN("failed to exec read", KR(ret), K(tenant_id), K(sql));
     }
   }
+  LOG_INFO("get all ls status by order1 end");
   return ret;
 }
 

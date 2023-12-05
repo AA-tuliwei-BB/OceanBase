@@ -1048,5 +1048,35 @@ int ObServerTableOperator::exec_write(
   LOG_INFO("update __all_server table", KR(ret), K(affected_rows), K(sql));
   return ret;
 }
+
+int ObServerTableOperator::exec_write1(
+    ObMySQLTransaction &trans,
+    ObSqlString &sql,
+    const bool is_multi_rows_affected)
+{
+  int ret = OB_SUCCESS;
+  int64_t affected_rows = 0;
+  ObTimeoutCtx ctx;
+  if (OB_UNLIKELY(!sql.is_valid())) {
+    ret = OB_INVALID_ARGUMENT;
+    LOG_WARN("invalid argument", KR(ret), K(sql));
+  } else if (OB_FAIL(ObRootUtils::get_rs_default_timeout_ctx(ctx))) {
+    LOG_WARN("fail to get timeout ctx", KR(ret), K(ctx));
+  } else if (OB_FAIL(trans.write(sql.ptr(), affected_rows))) {
+    LOG_WARN("fail to execute sql", KR(ret), K(sql));
+  } else if (is_zero_row(affected_rows)) {
+    ret = OB_NEED_RETRY;
+    LOG_WARN("no affected rows, please retry the operation or "
+        "check the table to see if it has been updated already",
+        KR(ret), K(affected_rows), K(sql));
+  } else if (!is_multi_rows_affected && !is_single_row(affected_rows)) {
+    ret = OB_ERR_UNEXPECTED;
+    LOG_WARN("unexpected error appears, more than one affected row",
+        KR(ret), K(affected_rows), K(sql));
+  } else {}
+  LOG_INFO("update __all_server table", KR(ret), K(affected_rows), K(sql));
+  return ret;
+}
+
 }//end namespace rootserver
 }//end namespace oceanbase

@@ -257,6 +257,12 @@ public:
                             const common::ObString &zone_priority,
                             const share::ObTenantSwitchoverStatus &working_sw_status,
                             ObMySQLTransaction &trans) override;
+ virtual     int create_new_ls1(const ObLSStatusInfo &ls_info,
+                            const SCN &current_tenant_scn,
+                            const common::ObString &zone_priority,
+                            const share::ObTenantSwitchoverStatus &working_sw_status,
+                            ObMySQLTransaction &trans) override;
+
   /*
    * description: override of ObLSLifeIAgent
    * @param[in] tenant_id
@@ -311,6 +317,13 @@ public:
                        const ObTenantSwitchoverStatus &working_sw_status,
                        ObMySQLProxy &client);
 
+int update_ls_status1(const uint64_t tenant_id, const ObLSID &id,
+                       const ObLSStatus &old_status,
+                       const ObLSStatus &new_status, 
+                       const ObTenantSwitchoverStatus &working_sw_status,
+                       ObMySQLProxy &client);
+
+    
   /*
    * description: update ls init member list while first create ls
    * @param[in] tenant_id
@@ -493,6 +506,16 @@ public:
       ObMySQLTransaction &trans);
 
 
+
+        int update_ls_status_in_trans1(
+      const uint64_t tenant_id,
+      const ObLSID &id,
+      const ObLSStatus &old_status,
+      const ObLSStatus &new_status,
+      const ObTenantSwitchoverStatus &working_sw_status,
+      ObMySQLTransaction &trans);
+
+
 private:
   template<typename T> int get_list_hex_(
       const T &list,
@@ -553,6 +576,7 @@ private:
 
 private:
   const int64_t MAX_ERROR_LOG_PRINT_SIZE = 1024;
+  common::ObMySQLProxy *proxy_;  
 };
 
 }

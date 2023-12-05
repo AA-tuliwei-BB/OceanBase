@@ -282,10 +282,14 @@ int ObLSCreator::create_tenant_sys_ls(
         if (OB_ENTRY_NOT_EXIST == ret) {
           ret = OB_SUCCESS;
           share::ObLSLifeAgentManager ls_life_agent(*proxy_);
+
+          LOG_INFO("create_new_ls begin", K_(id), K_(tenant_id));
           if (OB_FAIL(ls_life_agent.create_new_ls(status_info, create_scn, zone_priority,
                                                   share::NORMAL_SWITCHOVER_STATUS))) {
             LOG_WARN("failed to create new ls", KR(ret), K(status_info), K(create_scn), K(zone_priority));
           }
+          LOG_INFO("create_new_ls end ", K_(id), K_(tenant_id));
+
         }
         if (OB_SUCC(ret)) {
           REPEAT_CREATE_LS();
@@ -295,7 +299,7 @@ int ObLSCreator::create_tenant_sys_ls(
   }
 
   const int64_t cost = ObTimeUtility::current_time() - start_time;
-  LOG_INFO("finish to create log stream", KR(ret), K_(id), K_(tenant_id), K(cost));
+  LOG_INFO("finish create log stream", KR(ret), K_(id), K_(tenant_id), K(cost));
   LS_EVENT_ADD(tenant_id_, id_, "create_ls_finish", ret, paxos_replica_num, "", K(cost));
   return ret;
 }

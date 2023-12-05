@@ -53,6 +53,7 @@ int ObMySQLTransaction::start_transaction(
     const uint64_t &tenant_id,
     bool with_snapshot)
 {
+  LOG_INFO(" ObMySQLTransaction::start_transaction begin");
   int ret = OB_SUCCESS;
   if (NULL == get_connection()) {
     ret = OB_INNER_STAT_ERROR;
@@ -60,6 +61,7 @@ int ObMySQLTransaction::start_transaction(
   } else if (OB_FAIL(get_connection()->start_transaction(tenant_id, with_snapshot))) {
     LOG_WARN("fail to start transaction", K(ret), K(tenant_id), K(with_snapshot));
   }
+  LOG_INFO(" ObMySQLTransaction::start_transaction end");
   return ret;
 }
 
@@ -69,6 +71,7 @@ int ObMySQLTransaction::start(
     bool with_snapshot/* = false*/,
     const int32_t group_id /* = 0*/)
 {
+  LOG_INFO("ObMySQLTransaction::start begin");
   int ret = OB_SUCCESS;
   start_time_ = ::oceanbase::common::ObTimeUtility::current_time();
   if (OB_FAIL(connect(tenant_id, group_id, sql_client))) {
@@ -85,8 +88,12 @@ int ObMySQLTransaction::start(
       LOG_DEBUG("start transaction success", K(tenant_id), K(with_snapshot));
     }
   }
+  LOG_INFO("ObMySQLTransaction::start end");
   return ret;
 }
+
+
+
 
 int ObMySQLTransaction::start(ObISQLClient *proxy,
                               const uint64_t &tenant_id,

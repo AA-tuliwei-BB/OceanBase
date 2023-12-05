@@ -63,6 +63,14 @@ public:
                             const common::ObString &zone_priority,
                             const share::ObTenantSwitchoverStatus &working_sw_status,
                             ObMySQLTransaction &trans) override final;
+
+
+
+ virtual int create_new_ls1(const ObLSStatusInfo &ls_info,
+                            const SCN &create_ls_scn,
+                            const common::ObString &zone_priority,
+                            const share::ObTenantSwitchoverStatus &working_sw_status,
+                            ObMySQLTransaction &trans) override final;
   /*
    * description: override of ObLSLifeIAgent
    * @param[in] tenant_id

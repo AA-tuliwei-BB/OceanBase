@@ -125,17 +125,22 @@ int ObCommonLSService::try_create_ls_(const share::schema::ObTenantSchema &tenan
   } else if (!is_user_tenant(tenant_id) || !tenant_schema.is_valid()) {
     ret = OB_INVALID_ARGUMENT;
     LOG_WARN("tenant is invalid", KR(ret), K(tenant_id), K(tenant_schema));
-  } else {
+  }
+   
+  else 
+  {
     share::ObLSStatusInfoArray status_info_array;
     share::ObLSStatusOperator ls_op;
     ObLSRecoveryStat recovery_stat;
     ObLSRecoveryStatOperator ls_recovery_operator;
     palf::PalfBaseInfo palf_base_info;
     int tmp_ret = OB_SUCCESS;
+    
     if (OB_FAIL(ls_op.get_all_ls_status_by_order(
             tenant_id, status_info_array, *GCTX.sql_proxy_))) {
       LOG_WARN("failed to get all ls status", KR(ret), K(tenant_id));
     }
+
     for (int64_t i = 0; OB_SUCC(ret) && i < status_info_array.count(); ++i) {
       const ObLSStatusInfo &status_info = status_info_array.at(i);
       if (status_info.ls_is_creating()) {
@@ -154,6 +159,41 @@ int ObCommonLSService::try_create_ls_(const share::schema::ObTenantSchema &tenan
       }
     }  // end for
   }
+
+//MYCHANGE
+    // else if(tenant_id!=1)
+    // {
+    // share::ObLSStatusInfoArray status_info_array1;
+    // share::ObLSStatusOperator ls_op1;
+    // ObLSRecoveryStat recovery_stat1;
+    // ObLSRecoveryStatOperator ls_recovery_operator1;
+    // palf::PalfBaseInfo palf_base_info1;
+    // int tmp_ret = OB_SUCCESS;
+    
+    // if (OB_FAIL(ls_op1.get_all_ls_status_by_order(
+    //         tenant_id, status_info_array1, *GCTX.sql_proxy_))) {
+    //   LOG_WARN("failed to get all ls status", KR(ret), K(tenant_id));
+    // }
+    
+    // for (int64_t i = 0; OB_SUCC(ret) && i < status_info_array1.count(); ++i) {
+    //   const ObLSStatusInfo &status_info1 = status_info_array1.at(i);
+    //   if (status_info1.ls_is_creating()) {
+    //     recovery_stat1.reset();
+    //     if (OB_FAIL(ls_recovery_operator1.get_ls_recovery_stat1(
+    //               tenant_id, status_info1.ls_id_, false /*for_update*/,
+    //               recovery_stat1, *GCTX.sql_proxy_))) {
+    //       LOG_WARN("failed to get ls recovery stat", KR(ret), K(tenant_id),
+    //                  K(status_info1));
+    //     } else if (OB_FAIL(do_create_user_ls(tenant_schema, status_info1,
+    //                                          recovery_stat1.get_create_scn(),
+    //                                          false, palf_base_info1))) {
+    //       LOG_WARN("failed to create new ls", KR(ret), K(status_info1),
+    //                  K(recovery_stat1));
+    //     }
+    //   }
+    // }  // end for
+  
+  
   return ret;
 }
 //不管是主库还是备库都有概率存在一个日志流组内的日志流记录的unit_group不一致的情况

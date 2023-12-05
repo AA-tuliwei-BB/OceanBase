@@ -46,6 +46,8 @@ public:
   using ObISQLClient::write;
 
   int connect(const uint64_t tenant_id, const int32_t group_id, ObISQLClient *sql_client);
+
+  
   virtual sqlclient::ObISQLConnectionPool *get_pool() override { return pool_; }
   virtual sqlclient::ObISQLConnection *get_connection() override { return conn_; }
 

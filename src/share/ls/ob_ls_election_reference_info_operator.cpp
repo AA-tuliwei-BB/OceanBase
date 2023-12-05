@@ -42,6 +42,8 @@ int ObLsElectionReferenceInfoOperator::create_new_ls(const ObLSStatusInfo &ls_in
     ret = OB_INVALID_ARGUMENT;
     OB_LOG(WARN, "invalid_argument", KR(ret), K(ls_info));
   } else {
+
+   
     common::ObSqlString sql;
     if (OB_FAIL(sql.assign_fmt(
             "INSERT into %s (tenant_id, ls_id, zone_priority, manual_leader_server, blacklist) "
@@ -49,14 +51,69 @@ int ObLsElectionReferenceInfoOperator::create_new_ls(const ObLSStatusInfo &ls_in
             OB_ALL_LS_ELECTION_REFERENCE_INFO_TNAME, ls_info.tenant_id_,
             ls_info.ls_id_.id(), zone_priority.ptr(), "0.0.0.0:0", ""))) {
       OB_LOG(WARN, "failed to assing sql", KR(ret), K(ls_info), K(create_ls_scn));
-    } else if (OB_FAIL(exec_write(ls_info.tenant_id_, sql, this, trans))) {
+    } 
+    else if (OB_FAIL(exec_write(ls_info.tenant_id_, sql, this, trans))) {
       OB_LOG(WARN, "failed to exec write", KR(ret), K(ls_info), K(sql));
     }
+
+//MYCHANGE
+// if(ls_info.tenant_id_!=1)
+// {
+//      if (OB_FAIL(exec_write(OB_SYS_TENANT_ID, sql, this, trans))) {
+//       OB_LOG(WARN, "failed to exec write", KR(ret), K(ls_info), K(sql));
+//     }
+
+// }
+
+
+
     OB_LOG(INFO, "[LS_ELECTION] create new ls", KR(ret), K(ls_info), K(create_ls_scn));
   }
   return ret;
 }
 
+
+int ObLsElectionReferenceInfoOperator::create_new_ls1(const ObLSStatusInfo &ls_info,
+                                                     const SCN &create_ls_scn,
+                                                     const common::ObString &zone_priority,
+                                                     const share::ObTenantSwitchoverStatus &working_sw_status,
+                                                     ObMySQLTransaction &trans)
+{
+  int ret = OB_SUCCESS;
+  UNUSEDx(create_ls_scn, working_sw_status);
+  if (OB_UNLIKELY(!ls_info.is_valid())) {
+    ret = OB_INVALID_ARGUMENT;
+    OB_LOG(WARN, "invalid_argument", KR(ret), K(ls_info));
+  } else {
+
+   
+    common::ObSqlString sql;
+    if (OB_FAIL(sql.assign_fmt(
+            "INSERT into %s (tenant_id, ls_id, zone_priority, manual_leader_server, blacklist) "
+            "values (%ld, %ld, '%s', '%s', '%s')",
+            OB_ALL_LS_ELECTION_REFERENCE_INFO_TNAME, ls_info.tenant_id_,
+            ls_info.ls_id_.id(), zone_priority.ptr(), "0.0.0.0:0", ""))) {
+      OB_LOG(WARN, "failed to assing sql", KR(ret), K(ls_info), K(create_ls_scn));
+    } 
+    else if (OB_FAIL(exec_write(ls_info.tenant_id_, sql, this, trans))) {
+      OB_LOG(WARN, "failed to exec write", KR(ret), K(ls_info), K(sql));
+    }
+
+//MYCHANGE
+// if(ls_info.tenant_id_!=1)
+// {
+//      if (OB_FAIL(exec_write(OB_SYS_TENANT_ID, sql, this, trans))) {
+//       OB_LOG(WARN, "failed to exec write", KR(ret), K(ls_info), K(sql));
+//     }
+
+// }
+
+
+
+    OB_LOG(INFO, "[LS_ELECTION] create new ls", KR(ret), K(ls_info), K(create_ls_scn));
+  }
+  return ret;
+}
 int ObLsElectionReferenceInfoOperator::drop_ls(const uint64_t &tenant_id,
                                                const share::ObLSID &ls_id,
                                                const ObTenantSwitchoverStatus &working_sw_status,

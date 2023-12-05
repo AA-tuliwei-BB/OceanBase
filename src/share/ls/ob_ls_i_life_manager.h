@@ -104,6 +104,13 @@ public:
                             const common::ObString &zone_priority,
                             const share::ObTenantSwitchoverStatus &working_sw_status,
                             ObMySQLTransaction &trans) = 0;
+
+
+virtual int create_new_ls1(const ObLSStatusInfo &ls_info,
+                            const SCN &create_scn,
+                            const common::ObString &zone_priority,
+                            const share::ObTenantSwitchoverStatus &working_sw_status,
+                            ObMySQLTransaction &trans) = 0;
   //drop ls
   virtual int drop_ls(const uint64_t &tenant_id,
                       const share::ObLSID &ls_id,
@@ -160,6 +167,11 @@ public:
    * param[in]: client*/
   template <typename TableOperator>
   int exec_write(const uint64_t &tenant_id, const common::ObSqlString &sql,
+                 TableOperator *table_operator, ObISQLClient &client,
+                 const bool ignore_row = false);
+
+ template <typename TableOperator>
+  int exec_write1(const uint64_t &tenant_id, const common::ObSqlString &sql,
                  TableOperator *table_operator, ObISQLClient &client,
                  const bool ignore_row = false);
   /*
@@ -236,7 +248,6 @@ int ObLSTemplateOperator::exec_read(const uint64_t &tenant_id,
   }
   return ret;
 }
-
 
 template <typename TableOperator, typename LS_Result>
 int ObLSTemplateOperator::exec_read1(const uint64_t &tenant_id,
@@ -315,10 +326,21 @@ int ObLSTemplateOperator::exec_write(const uint64_t &tenant_id,
                                                             default_timeout))) {
       SHARE_LOG(WARN, "failed to set default timeout ctx", KR(ret),
                K(default_timeout));
-    } else if (OB_FAIL(
-                   client.write(exec_tenant_id, sql.ptr(), affected_rows))) {
+    } else if 
+    (
+      
+      OB_FAIL(client.write(exec_tenant_id, sql.ptr(), affected_rows))) {
       SHARE_LOG(WARN, "failed to execute sql", KR(ret), K(exec_tenant_id), K(sql));
-    } else if (!is_single_row(affected_rows) && !ignore_row) {
+    } 
+    // 尝试修改
+    // else if (exec_tenant_id!=OB_SYS_TENANT_ID)
+    // {if(OB_FAIL(
+    //                client.write(OB_SYS_TENANT_ID, sql.ptr(), affected_rows))) {
+    //   SHARE_LOG(WARN, "failed to execute sql", KR(ret), K(exec_tenant_id), K(sql));
+    // } 
+    // }
+    
+    else if (!is_single_row(affected_rows) && !ignore_row) {
       ret = OB_NEED_RETRY;
       SHARE_LOG(WARN, "expected one row, may need retry", KR(ret), K(affected_rows),
                K(sql), K(ignore_row));
@@ -327,6 +349,48 @@ int ObLSTemplateOperator::exec_write(const uint64_t &tenant_id,
   return ret;
 }
 
+
+template <typename TableOperator>
+int ObLSTemplateOperator::exec_write1(const uint64_t &tenant_id,
+                                      const common::ObSqlString &sql,
+                                      TableOperator *table_operator, 
+                                      ObISQLClient &client,
+                                      const bool ignore_row)
+{
+  int ret = OB_SUCCESS;
+  if (OB_UNLIKELY(sql.empty() || OB_INVALID_TENANT_ID == tenant_id)
+      || OB_ISNULL(table_operator)) {
+    ret = OB_INVALID_ARGUMENT;
+    SHARE_LOG(WARN, "invalid argument", KR(ret), K(sql), K(tenant_id), KP(table_operator));
+  } else {
+    int64_t affected_rows = 0;
+    ObTimeoutCtx ctx;
+    const int64_t timestamp = ObTimeUtility::current_time();
+    const int64_t default_timeout = GCONF.internal_sql_execute_timeout;
+    uint64_t exec_tenant_id = table_operator->get_exec_tenant_id(tenant_id);
+    if (OB_UNLIKELY(OB_INVALID_TENANT_ID == exec_tenant_id)) {
+      ret = OB_ERR_UNEXPECTED;
+      SHARE_LOG(WARN, "failed to get exec tenant id", KR(ret), K(exec_tenant_id));
+    } else if (OB_FAIL(ObShareUtil::set_default_timeout_ctx(ctx,
+                                                            default_timeout))) {
+      SHARE_LOG(WARN, "failed to set default timeout ctx", KR(ret),
+               K(default_timeout));
+    } 
+    
+    else if (OB_FAIL(
+                   client.write(sql.ptr(), affected_rows))) {
+      SHARE_LOG(WARN, "failed to execute sql", KR(ret), K(exec_tenant_id), K(sql));
+    } 
+   
+    
+    else if (!is_single_row(affected_rows) && !ignore_row) {
+      ret = OB_NEED_RETRY;
+      SHARE_LOG(WARN, "expected one row, may need retry", KR(ret), K(affected_rows),
+               K(sql), K(ignore_row));
+    }
+  }
+  return ret;
+}
 #define DEFINE_IN_TRANS_FUC(func_name, ...)\
 int func_name ##_in_trans(__VA_ARGS__, ObMySQLTransaction &trans);\
 int func_name(__VA_ARGS__);

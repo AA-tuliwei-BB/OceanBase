@@ -122,6 +122,8 @@ int ObLSLifeAgentManager::create_new_ls_in_trans(const ObLSStatusInfo &ls_info,
                             const share::ObTenantSwitchoverStatus &working_sw_status,
                             ObMySQLTransaction &trans)
 {
+  LOG_INFO("ObLSLifeAgentManager::create_new_ls_in_trans begin");
+  
   int ret = OB_SUCCESS;
   if (OB_UNLIKELY(!ls_info.is_valid() || !create_ls_scn.is_valid())) {
     ret = OB_INVALID_ARGUMENT;
@@ -131,8 +133,71 @@ int ObLSLifeAgentManager::create_new_ls_in_trans(const ObLSStatusInfo &ls_info,
     if (OB_ISNULL(agents_[i])) {
       ret = OB_ERR_UNEXPECTED;
       LOG_WARN("agent is null", KR(ret), K(i));
-    } else if (OB_FAIL(agents_[i]->create_new_ls(ls_info, create_ls_scn, zone_priority, working_sw_status, trans))) {
+
+    }
+    //具体创建new_ls函数 
+    else 
+    
+    { LOG_INFO("ObLSLifeAgentManager::create_new_ls begin",K(i));
+      
+      if (OB_FAIL(agents_[i]->create_new_ls(ls_info, create_ls_scn, zone_priority, working_sw_status, trans))) {
       LOG_WARN("failed to create new ls", KR(ret), K(i), K(ls_info), K(create_ls_scn), K(zone_priority));
+    }
+    LOG_INFO("ObLSLifeAgentManager::create_new_ls end",K(i));
+
+    }
+  }
+  return ret;
+}
+
+int ObLSLifeAgentManager::create_new_ls_in_trans1(const ObLSStatusInfo &ls_info,
+                            const SCN &create_ls_scn,
+                            const common::ObString &zone_priority,
+                            const share::ObTenantSwitchoverStatus &working_sw_status,
+                            ObMySQLTransaction &trans)
+{
+  LOG_INFO("ObLSLifeAgentManager::create_new_ls_in_trans1 begin");
+  
+  int ret = OB_SUCCESS;
+  if (OB_UNLIKELY(!ls_info.is_valid() || !create_ls_scn.is_valid())) {
+    ret = OB_INVALID_ARGUMENT;
+    LOG_WARN("invalid argument", KR(ret), K(ls_info), K(create_ls_scn));
+  }
+
+ if (OB_ISNULL(agents_[0])) {
+      ret = OB_ERR_UNEXPECTED;
+      LOG_WARN("agent is null", KR(ret), K(0));
+
+    }
+    //具体创建new_ls函数 
+    else 
+    
+    { LOG_INFO("create_new_ls1 begin",K(0));
+      
+      if (OB_FAIL(agents_[0]->create_new_ls1(ls_info, create_ls_scn, zone_priority, working_sw_status, trans))) {
+      LOG_WARN("failed to create new ls1", KR(ret), K(0), K(ls_info), K(create_ls_scn), K(zone_priority));
+    }
+    LOG_INFO("create_new_ls1 end",K(0));
+
+    }
+
+
+  for (int64_t i = 1; OB_SUCC(ret) && i < MAX_AGENT_NUM; ++i) {
+    if (OB_ISNULL(agents_[i])) {
+      ret = OB_ERR_UNEXPECTED;
+      LOG_WARN("agent is null", KR(ret), K(i));
+
+    }
+    //具体创建new_ls函数 
+    else 
+    
+    { LOG_INFO("create_new_ls begin",K(i));
+      
+      if (OB_FAIL(agents_[i]->create_new_ls(ls_info, create_ls_scn, zone_priority, working_sw_status, trans))) {
+      LOG_WARN("failed to create new ls", KR(ret), K(i), K(ls_info), K(create_ls_scn), K(zone_priority));
+    }
+    LOG_INFO("create_new_ls end",K(i));
+
     }
   }
   return ret;

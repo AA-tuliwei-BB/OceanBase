@@ -298,6 +298,7 @@ int ObLSAttrOperator::operator_ls_in_trans_(
     const ObTenantSwitchoverStatus &working_sw_status,
     ObMySQLTransaction &trans)
 {
+
   int ret = OB_SUCCESS;
   if (OB_UNLIKELY(!ls_attr.is_valid()
                    || sql.empty()
@@ -346,12 +347,18 @@ int ObLSAttrOperator::operator_ls_in_trans_(
         LOG_WARN("duplicate ls already exist", KR(ret), K(duplicate_ls_attr), K(ls_attr));
       }
     }
+    LOG_INFO("exec_write begin");
+    //怀疑这里写入all_ls
+    //trans继承ObSingleConnectionProxy,而ObSingleConnectionProxy继承ObISQLClient
     if (FAILEDx(exec_write(tenant_id_, sql, this, trans))) {
       LOG_WARN("failed to exec write", KR(ret), K(tenant_id_), K(sql));
-    } else if (!skip_sub_trans && OB_FAIL(process_sub_trans_(ls_attr, trans))) {
+    } 
+    //巧妙的等待normal循环 利用&&的性质
+    else if (!skip_sub_trans && OB_FAIL(process_sub_trans_(ls_attr, trans))) {
       LOG_WARN("failed to process sub trans", KR(ret), K(ls_attr));
     }
   }
+ 
   return ret;
 }
 
@@ -360,6 +367,7 @@ int ObLSAttrOperator::insert_ls(
     const ObTenantSwitchoverStatus &working_sw_status,
     ObMySQLTransaction *trans)
 {
+   LOG_INFO(" ObLSAttrOperator::insert_ls begin");
   int ret = OB_SUCCESS;
   ObLSFlagStr flag_str;
   common::ObSqlString sql;
@@ -391,6 +399,8 @@ int ObLSAttrOperator::insert_ls(
   }
   LOG_INFO("[LS_OPERATOR] insert ls", KR(ret), K(ls_attr), K(sql));
   ALL_LS_EVENT_ADD(tenant_id_, ls_attr.get_ls_id(), "insert_ls", ret, sql);
+
+  LOG_INFO(" ObLSAttrOperator::insert_ls end");
   return ret;
 }
 
@@ -506,6 +516,7 @@ int ObLSAttrOperator::update_ls_status(const ObLSID &id,
                                         const share::ObLSStatus &new_status,
                                         const ObTenantSwitchoverStatus &working_sw_status)
 {
+  LOG_INFO("ObLSAttrOperator::update_ls_status begin");
   int ret = OB_SUCCESS;
   if (OB_UNLIKELY(!id.is_valid()
                   || !is_valid_status_in_ls(old_status)
@@ -513,6 +524,9 @@ int ObLSAttrOperator::update_ls_status(const ObLSID &id,
     ret = OB_INVALID_ARGUMENT;
     LOG_WARN("invalid_argument", KR(ret), K(id), K(new_status), K(old_status));
   } else {
+
+//此事务疑似用于切换租户
+
     ObMySQLTransaction trans;
     if (OB_FAIL(trans.start(proxy_, tenant_id_))) {
       LOG_WARN("failed to start transaction", KR(ret), K(tenant_id_));
@@ -527,6 +541,7 @@ int ObLSAttrOperator::update_ls_status(const ObLSID &id,
       }
     }
   }
+  LOG_INFO("ObLSAttrOperator::update_ls_status end");
   return ret;
 }
 
@@ -536,6 +551,7 @@ int ObLSAttrOperator::update_ls_status_in_trans(const ObLSID &id,
                                         const ObTenantSwitchoverStatus &working_sw_status,
                                         common::ObMySQLTransaction &trans)
 {
+  LOG_INFO("ObLSAttrOperator::update_ls_status_in_trans begin");
   int ret = OB_SUCCESS;
   if (OB_UNLIKELY(!id.is_valid()
                   || !is_valid_status_in_ls(old_status)
@@ -571,6 +587,7 @@ int ObLSAttrOperator::update_ls_status_in_trans(const ObLSID &id,
     }
     ALL_LS_EVENT_ADD(tenant_id_, id, "update_ls_status", ret, sql);
   }
+  LOG_INFO("ObLSAttrOperator::update_ls_status_in_trans end");
   return ret;
 }
 

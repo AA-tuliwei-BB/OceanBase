@@ -122,6 +122,12 @@ public:
                             const common::ObString &zone_priority,
                             const share::ObTenantSwitchoverStatus &working_sw_status,
                             ObMySQLTransaction &trans) override;
+
+virtual int create_new_ls1(const ObLSStatusInfo &ls_info,
+                            const SCN &create_ls_scn,
+                            const common::ObString &zone_priority,
+                            const share::ObTenantSwitchoverStatus &working_sw_status,
+                            ObMySQLTransaction &trans) override;
   /*
    * description: override of ObLSLifeIAgent
    * @param[in] tenant_id
@@ -206,6 +212,13 @@ public:
    * @param[out] ls_recovery
    * @param[in] client*/
   int get_ls_recovery_stat(
+      const uint64_t &tenant_id,
+      const share::ObLSID &ls_id,
+      const bool need_for_update,
+      ObLSRecoveryStat &ls_recovery,
+      ObISQLClient &client);
+
+        int get_ls_recovery_stat1(
       const uint64_t &tenant_id,
       const share::ObLSID &ls_id,
       const bool need_for_update,

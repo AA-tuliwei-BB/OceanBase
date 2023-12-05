@@ -222,7 +222,7 @@ int ObTenantThreadHelper::wait_tenant_schema_and_version_ready_(
       }
 
       if (!is_ready) {
-        idle(int64_t(0.5 * 1000 *1000)); // MYCHANGE
+        idle(int64_t(0.5 * 1000 *1000)); 
       }
     }
 

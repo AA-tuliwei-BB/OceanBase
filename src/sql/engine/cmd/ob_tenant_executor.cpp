@@ -166,6 +166,7 @@ int ObCreateTenantExecutor::wait_schema_refreshed_(const uint64_t tenant_id)
 int ObCreateTenantExecutor::wait_user_ls_valid_(const uint64_t tenant_id)
 {
   int ret = OB_SUCCESS;
+  LOG_INFO("begin wait user ls valid");
   
   int64_t start_ts = ObTimeUtility::current_time();
     oceanbase::rootserver::ObDDLService ddl_service;
@@ -189,7 +190,7 @@ int ObCreateTenantExecutor::wait_user_ls_valid_(const uint64_t tenant_id)
       if (THIS_WORKER.is_timeout()) {
         ret = OB_TIMEOUT;
         LOG_WARN("failed to wait user ls valid", KR(ret));
-      } else if (OB_FAIL(status_op.get_all_ls_status_by_order1(tenant_id, ls_array, *GCTX.sql_proxy_))) {
+      } else if (OB_FAIL(status_op.get_all_ls_status_by_order(tenant_id, ls_array, *GCTX.sql_proxy_))) {
         LOG_WARN("failed to get ls status", KR(ret), K(tenant_id));
       } else {
         for (int64_t i = 0; OB_SUCC(ret) && i < ls_array.count() && !user_ls_valid; ++i) {
@@ -229,6 +230,7 @@ int ObCreateTenantExecutor::wait_user_ls_valid_(const uint64_t tenant_id)
                "cost", ObTimeUtility::current_time() - start_ts);
     }
   }
+  LOG_INFO("end wait user ls valid");
   return ret;
 }
 
