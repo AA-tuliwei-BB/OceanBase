@@ -61,6 +61,7 @@ class SCN;
 class ObLSTableOperator;
 class ObAutoincrementService;
 class ObSplitInfo;
+class ObCreateTableTh;
 struct TenantUnitRepCnt;
 namespace schema
 {
@@ -2015,7 +2016,10 @@ private:
       const palf::PalfBaseInfo &palf_base_info,
       const common::ObIArray<common::ObConfigPairs> &init_configs,
       bool is_creating_standby,
-      const common::ObString &log_restore_source);
+      const common::ObString &log_restore_source,
+      ObCreateTableTh &th,
+      ObCreateTableTh &th_2,
+      ObSArray<ObTableSchema>& tables);
   int set_sys_ls_status(const uint64_t tenant_id);
   int create_tenant_sys_ls(
       const share::schema::ObTenantSchema &tenant_schema,
@@ -2030,10 +2034,10 @@ private:
   int create_tenant_sys_tablets(
       const uint64_t tenant_id,
       common::ObIArray<share::schema::ObTableSchema> &tables);
+
   int init_tenant_schema(
       const uint64_t tenant_id,
       const share::schema::ObTenantSchema &tenant_schema,
-      std::vector<int> &tables_group_offset,
       const share::ObTenantRole &tenant_role,
       const share::SCN &recovery_until_scn,
       common::ObIArray<share::schema::ObTableSchema> &tables,
@@ -2063,7 +2067,7 @@ private:
                                 ObIArray<ObTableSchema> &table_schemas,
                                 const int64_t begin, const int64_t end);
 
-  int parallel_create_table_schema(uint64_t tenant_id, ObIArray<ObTableSchema> &table_schemas);
+  int parallel_create_table_schema(uint64_t tenant_id, ObIArray<ObTableSchema> &table_schemas, int thread_num);
 
   int safe_parallel_create_table_schema(uint64_t tenant_id, ObIArray<ObTableSchema> &table_schemas);
 

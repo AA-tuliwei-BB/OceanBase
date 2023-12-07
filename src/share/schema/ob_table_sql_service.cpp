@@ -1266,6 +1266,7 @@ int ObTableSqlService::add_columns_for_not_core(ObISQLClient &sql_client,
   int64_t affected_rows = 0;
   if (OB_FAIL(ret)) {
   } else if (enable_stash_query) {
+    LOG_INFO("MYTEST: stash_query");
     stash_desc->add_row_cnt(table.get_column_count());
     stash_desc2->add_row_cnt(table.get_column_count());
     if (OB_FAIL(trans->do_stash_query_batch())) {

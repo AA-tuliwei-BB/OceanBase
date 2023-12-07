@@ -563,12 +563,11 @@ int ObBootstrap::execute_bootstrap(rootserver::ObServerZoneOpService &server_zon
   BOOTSTRAP_LOG(INFO, "start do execute_bootstrap");
 
   std::function<void()> func_refresh([&]() {
-    if (OB_SUCC(ret)) {
-      if (OB_FAIL(ddl_service_.refresh_schema(OB_SYS_TENANT_ID))) {
-        LOG_WARN("failed to refresh_schema", K(ret));
-      }
+    int ret;
+    if (OB_FAIL(ddl_service_.refresh_schema(OB_SYS_TENANT_ID))) {
+      LOG_WARN("failed to refresh_schema", K(ret));
     }
-    BOOTSTRAP_CHECK_SUCCESS_V2("refresh_schema");
+    //BOOTSTRAP_CHECK_SUCCESS_V2("refresh_schema");
   });
 
   if (OB_FAIL(check_inner_stat())) {
@@ -626,6 +625,7 @@ int ObBootstrap::execute_bootstrap(rootserver::ObServerZoneOpService &server_zon
     ROOTSERVICE_EVENT_ADD("bootstrap", "bootstrap_succeed");
   }
   LOG_INFO("MYTEST: rs done");
+
   refresh_th.wait();
 
   BOOTSTRAP_CHECK_SUCCESS();
@@ -1082,7 +1082,7 @@ int ObBootstrap::batch_create_schema_local(uint64_t tenant_id,
   return ret;
 }
 
-int ObBootstrap::parallel_create_table_schema(uint64_t tenant_id, ObDDLService &ddl_service, ObIArray<ObTableSchema> &table_schemas)
+int ObBootstrap::parallel_create_table_schema(uint64_t tenant_id, ObDDLService &ddl_service, ObIArray<ObTableSchema> &table_schemas, int thread_num)
 {
   int ret = OB_SUCCESS;
   int64_t finish_cnt = 0;
@@ -1091,9 +1091,9 @@ int ObBootstrap::parallel_create_table_schema(uint64_t tenant_id, ObDDLService &
   ObCurTraceId::TraceId *cur_trace_id = ObCurTraceId::get_trace_id();
   int tmp = 0;
 
-  threads.resize(7);
+  threads.resize(thread_num);
   int64_t atomic_current_table = 0, created_table = 0;
-  for (int i = 0; i < 7; ++i) {
+  for (int i = 0; i < thread_num; ++i) {
     ObCreateTableTh &th = threads[i];
     auto my_lambda = [&] () {
       const int64_t thread_start_time = ObTimeUtility::current_time();
@@ -1185,10 +1185,7 @@ int ObBootstrap::safe_parallel_create_table_schema(uint64_t tenant_id, ObDDLServ
   }
   ObCreateTableTh core_th;
   std::function<void()> func([tenant_id, &ddl_service, &table_schemas, begin]() {
-    int ret;
-    if (OB_FAIL(batch_create_schema_local(tenant_id, ddl_service, table_schemas, 0, begin))) {
-      LOG_WARN("fail to create core schemas");
-    }
+    batch_create_schema_local(tenant_id, ddl_service, table_schemas, 0, begin);
   });
   core_th.init(func);
   core_th.start();
@@ -1206,7 +1203,7 @@ int ObBootstrap::safe_parallel_create_table_schema(uint64_t tenant_id, ObDDLServ
   }
   total_count += sp_schemas.count();
   LOG_INFO("MYTEST: parallel_create_talbe: before create base");
-  if (OB_FAIL(parallel_create_table_schema(tenant_id, ddl_service, sp_schemas))) {
+  if (OB_FAIL(parallel_create_table_schema(tenant_id, ddl_service, sp_schemas, 7))) {
     LOG_WARN("fail to create base tables");
   }
   LOG_INFO("MYTEST: parallel_create_talbe: base created");
@@ -1219,12 +1216,12 @@ int ObBootstrap::safe_parallel_create_table_schema(uint64_t tenant_id, ObDDLServ
     }
   }
   total_count += sp_schemas.count();
-  if (OB_FAIL(parallel_create_table_schema(tenant_id, ddl_service, sp_schemas))) {
+  if (OB_FAIL(parallel_create_table_schema(tenant_id, ddl_service, sp_schemas, 7))) {
     LOG_WARN("fail to create index and lob tables");
   }
   LOG_INFO("MYTEST: parallel_create_talbe: index and lob_meta created");
-
   core_th.wait();
+
   LOG_INFO("MYTEST: safe_parallel_create_table finish", K(table_schemas.count()), K(total_count));
 
   return ret;

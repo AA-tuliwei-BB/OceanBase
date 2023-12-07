@@ -179,7 +179,7 @@ private:
 
 
       static int parallel_create_table_schema(
-      uint64_t tenant_id, ObDDLService &ddl_service, ObIArray<ObTableSchema> &table_schemas);
+      uint64_t tenant_id, ObDDLService &ddl_service, ObIArray<ObTableSchema> &table_schemas, int thread_num);
 
       static int safe_parallel_create_table_schema(
       uint64_t tenant_id, ObDDLService &ddl_service, ObIArray<ObTableSchema> &table_schemas);
