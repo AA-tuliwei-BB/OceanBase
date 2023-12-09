@@ -937,7 +937,7 @@ bool ObPlanCache::can_do_insert_batch_opt(ObPlanCacheCtx &pc_ctx)
     if (!pc_ctx.sql_ctx_.is_batch_params_execute() &&
         GCONF._sql_insert_multi_values_split_opt &&
         !pc_ctx.sql_ctx_.get_enable_user_defined_rewrite() &&
-        !session_info->is_inner() &&
+        //!session_info->is_inner() &&
         OB_BATCHED_MULTI_STMT_ROLLBACK != session_info->get_retry_info().get_last_query_retry_err()) {
       bret = true;
     } else {

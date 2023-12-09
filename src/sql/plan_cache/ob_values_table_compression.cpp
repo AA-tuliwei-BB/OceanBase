@@ -265,7 +265,7 @@ int ObValuesTableCompression::try_batch_exec_params(ObIAllocator &allocator,
   uint64_t data_version = 0;
   if (pc_ctx.sql_ctx_.handle_batched_multi_stmt() ||
       lib::is_oracle_mode() ||
-      session_info.is_inner() ||
+      //session_info.is_inner() ||
       session_info.get_is_in_retry() ||
       fp_result.values_tokens_.empty() ||
       !GCONF._enable_values_table_folding) {
