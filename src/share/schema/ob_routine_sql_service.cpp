@@ -413,7 +413,7 @@ int ObRoutineSqlService::del_routine_params(ObISQLClient &sql_client,
     ObSqlString sql;
     int64_t affected_rows = 0;
 
-    if (OB_FAIL(sql.append_fmt("INSERT /*+use_plan_cache(none)*/ INTO %s "
+    if (OB_FAIL(sql.append_fmt("INSERT INTO %s "
         "(tenant_id, routine_id, sequence, schema_version, is_deleted) VALUES ",
         OB_ALL_ROUTINE_PARAM_HISTORY_TNAME))) {
       LOG_WARN("append_fmt failed", K(ret));

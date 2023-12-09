@@ -3514,7 +3514,7 @@ int ObTableSqlService::delete_from_all_column_history(ObISQLClient &sql_client,
   const uint64_t exec_tenant_id = ObSchemaUtils::get_exec_tenant_id(tenant_id);
   if (OB_FAIL(check_ddl_allowed(table_schema))) {
     LOG_WARN("check ddl allowd failed", K(ret), K(table_schema));
-  } else if (OB_FAIL(sql.append_fmt("INSERT /*+use_plan_cache(none)*/ INTO %s "
+  } else if (OB_FAIL(sql.append_fmt("INSERT INTO %s "
       "(TENANT_ID, TABLE_ID, COLUMN_ID, SCHEMA_VERSION, IS_DELETED) VALUES ",
       OB_ALL_COLUMN_HISTORY_TNAME))) {
     LOG_WARN("append_fmt failed", K(ret));

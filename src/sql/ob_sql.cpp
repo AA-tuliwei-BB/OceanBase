@@ -2542,6 +2542,7 @@ OB_INLINE int ObSql::handle_text_query(const ObString &stmt, ObSqlCtx &context, 
     //do nothing
   }
   if (OB_SUCC(ret) && !result.get_is_from_plan_cache()) { //没有从plan cache中拿到plan, 走长路径生成plan
+    // auto start = ObTimeUtility::current_time();
     if (OB_FAIL(handle_physical_plan(trimed_stmt, context, result, *pc_ctx, get_plan_err))) {
       if (OB_ERR_PROXY_REROUTE == ret) {
         LOG_DEBUG("fail to handle physical plan", K(ret));
@@ -2549,6 +2550,7 @@ OB_INLINE int ObSql::handle_text_query(const ObString &stmt, ObSqlCtx &context, 
         LOG_WARN("fail to handle physical plan", K(ret));
       }
     }
+    // LOG_INFO("generate physical plan cost:", K(trimed_stmt), K(ObTimeUtility::current_time() - start));
   }
 
 
