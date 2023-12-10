@@ -604,6 +604,10 @@ int ObBootstrap::execute_bootstrap(rootserver::ObServerZoneOpService &server_zon
     }
     create_partition_th.wait();
 
+    if (FAILEDx(add_servers_in_rs_list(server_zone_op_service))) {
+      LOG_WARN("fail to add servers in rs_list_", KR(ret));
+    }
+
     if (OB_FAIL(create_all_schema(ddl_service_, table_schemas))) {
       LOG_WARN("create_all_schema failed",  K(table_schemas), K(ret));
     }
@@ -617,9 +621,7 @@ int ObBootstrap::execute_bootstrap(rootserver::ObServerZoneOpService &server_zon
   refresh_th.start();
 
   LOG_INFO("MYTEST: rs start");
-  if (FAILEDx(add_servers_in_rs_list(server_zone_op_service))) {
-    LOG_WARN("fail to add servers in rs_list_", KR(ret));
-  } else if (OB_FAIL(wait_all_rs_in_service())) {
+  if (OB_FAIL(wait_all_rs_in_service())) {
     LOG_WARN("failed to wait all rs in service", KR(ret));
   } else {
     ROOTSERVICE_EVENT_ADD("bootstrap", "bootstrap_succeed");
