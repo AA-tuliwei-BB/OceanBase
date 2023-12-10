@@ -23601,7 +23601,7 @@ int ObDDLService::safe_parallel_create_table_schema(uint64_t tenant_id, ObIArray
   }
   LOG_INFO("MYTEST: parallel_create_talbe: index and lob_meta created");
 
-  // core_th.wait();
+  core_th.wait();
   LOG_INFO("MYTEST: safe_parallel_create_table finish", K(table_schemas.count()), K(total_count));
 
   return ret;
