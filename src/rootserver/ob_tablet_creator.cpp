@@ -304,6 +304,7 @@ int ObTabletCreator::execute()
   ObTimeoutCtx ctx;
   const int64_t default_timeout_ts = GCONF.rpc_timeout;
   const int64_t SLEEP_INTERVAL = 100 * 1000L; // 100ms
+  int64_t start_time = ObTimeUtility::current_time();
   observer::ObInnerSQLConnection *conn = NULL;
   if (OB_UNLIKELY(!inited_)) {
     ret = OB_NOT_INIT;
@@ -359,6 +360,7 @@ int ObTabletCreator::execute()
     } // end for
   }
   reset();
+  LOG_INFO("MYTEST: tablet creator execute finish", "cost", ObTimeUtility::current_time() - start_time);
   return ret;
 }
 

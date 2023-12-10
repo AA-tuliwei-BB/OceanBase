@@ -23133,48 +23133,6 @@ int ObDDLService::init_tenant_schema(
       //FIXME:(yanmu.ztl) lock tenant's __all_core_table
       const int64_t refreshed_schema_version = 0;
 
-      // auto my_lambda = [&] (int thread_id, int mode, int *ret_p) {
-      //   std::string thread_name = "my_create_table" + std::to_string(thread_id);
-      //   ob_get_origin_thread_name() = thread_name.c_str();
-      //   share::ObTenantEnv::set_tenant(ctx);
-      //   // LOG_INFO("MYTEST", K(share::ObTenantEnv::get_tenant()));
-      //   int &ret = *ret_p;
-      //   ret = OB_SUCCESS;
-        // ObDDLSQLTransaction trans(schema_service_, true, true, false, false);
-        // if (OB_FAIL(trans.start(sql_proxy_, tenant_id, refreshed_schema_version))) {
-        //   LOG_WARN("fail to start trans", KR(ret), K(tenant_id));
-        // }
-        // ObDDLOperator sub_ddl_operator(*schema_service_, *sql_proxy_);
-        // if (OB_FAIL(create_sys_table_schemas(thread_id, mode, tables_group_offset, sub_ddl_operator, trans, tables))) {
-        //   LOG_WARN("fail to create sys tables", KR(ret), K(tenant_id));
-        // }
-        // if (trans.is_started()) {
-        //   int temp_ret = OB_SUCCESS;
-        //   bool commit = OB_SUCC(ret);
-        //   if (OB_SUCCESS != (temp_ret = trans.end(commit))) {
-        //     ret = (OB_SUCC(ret)) ? temp_ret : ret;
-        //     LOG_WARN("trans end failed", K(commit), K(temp_ret));
-        //   }
-        // }
-      // };
-
-      // std::function<void(int, int, int *)> my_function = my_lambda;
-      // std::vector<std::thread> threads;
-      // std::vector<int> result;
-      // result.resize(tables_group_offset.size() - 1);
-      // // my_lambda(thread_id, ctx, "my_create_table", &result[0]);
-      // for (int i = 1; i < 5; ++i) {
-      //   std::thread thread(my_function, i - 1, i, &result[i - 1]);
-      //   thread.join();
-      // }
-      // for (int i = 5; i < int(tables_group_offset.size()); ++i) {
-      //   threads.push_back(std::thread(my_function, i - 1, i, &result[i - 1]));
-      // }
-      // for (auto &thread : threads) {
-      //   thread.join();
-      // }
-      // LOG_INFO("MYTEST: all thread joint");
-
       if (OB_FAIL(create_sys_table_schemas(tables))) {
         LOG_WARN("fail to create sys tables", KR(ret), K(tenant_id));
       }
