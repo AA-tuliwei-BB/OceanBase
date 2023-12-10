@@ -23460,7 +23460,7 @@ int ObDDLService::batch_create_schema_local(uint64_t tenant_id,
     LOG_WARN("invalid argument", K(ret), K(begin), K(end), "table count", table_schemas.count());
   } else {
     ObDDLOperator ddl_operator(this->get_schema_service(), this->get_sql_proxy());
-    ObMySQLTransaction trans(true);
+    ObMySQLTransaction trans(false);
     if (OB_FAIL(trans.start(&this->get_sql_proxy(), tenant_id))) {
       LOG_WARN("start transaction failed", KR(ret));
     } else {
@@ -23520,7 +23520,7 @@ int ObDDLService::parallel_create_table_schema(uint64_t tenant_id, ObIArray<ObTa
       int ret = OB_SUCCESS;
       ObCurTraceId::set(*cur_trace_id);
       ObDDLOperator ddl_operator(get_schema_service(), get_sql_proxy());
-      ObMySQLTransaction trans(true);
+      ObMySQLTransaction trans(false);
       if (OB_FAIL(trans.start(&get_sql_proxy(), tenant_id))) {
         LOG_WARN("start transaction failed", KR(ret));
         return;
@@ -23643,7 +23643,7 @@ int ObDDLService::safe_parallel_create_table_schema(uint64_t tenant_id, ObIArray
   }
   LOG_INFO("MYTEST: parallel_create_talbe: index and lob_meta created");
 
-  core_th.wait();
+  // core_th.wait();
   LOG_INFO("MYTEST: safe_parallel_create_table finish", K(table_schemas.count()), K(total_count));
 
   return ret;
