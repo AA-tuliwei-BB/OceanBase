@@ -1009,7 +1009,7 @@ int ObServer::start()
     while (OB_SUCC(ret) && !stop_ && !synced) {
       synced = multi_tenant_.has_synced();
       if (!synced) {
-        USLEEP(50 * 1000);
+        USLEEP(10 * 1000);
       }
     }
     FLOG_INFO("check if multi tenant synced", KR(ret), K(stop_), K(synced));
@@ -1018,7 +1018,7 @@ int ObServer::start()
     while (OB_SUCC(ret) && !stop_ && !schema_ready) {
       schema_ready = schema_service_.is_sys_full_schema();
       if (!schema_ready) {
-        USLEEP(50 * 1000); // MYTAG: modify here
+        USLEEP(10 * 1000); // MYTAG: modify here
       }
     }
     FLOG_INFO("check if schema ready", KR(ret), K(stop_), K(schema_ready));
@@ -1032,7 +1032,7 @@ int ObServer::start()
     while (OB_SUCC(ret) && !stop_ && !timezone_usable) {
       timezone_usable = tenant_timezone_mgr_.is_usable();
       if (!timezone_usable) {
-        USLEEP(100 * 1000); // MYTAG: modify here
+        USLEEP(10 * 1000); // MYTAG: modify here
       }
     }
     FLOG_INFO("check if timezone usable", KR(ret), K(stop_), K(timezone_usable));
@@ -2932,7 +2932,7 @@ void ObServer::check_user_tenant_schema_refreshed(const ObIArray<uint64_t> &tena
                                   gctx_.schema_service_->is_tenant_refreshed(tenant_id) : true;
         if (!tenant_schema_refreshed) {
           // check wait and retry
-          usleep(1000 * 1000);
+          usleep(10 * 1000);
           if (REACH_TIME_INTERVAL(10 * 1000 * 1000)) {
             FLOG_INFO("[OBSERVER_NOTICE] Refreshing user tenant schema, need to wait ", K(tenant_id));
           }

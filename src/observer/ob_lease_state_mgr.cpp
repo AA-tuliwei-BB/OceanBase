@@ -302,7 +302,7 @@ int ObLeaseStateMgr::start_heartbeat()
     LOG_WARN("not init", K(ret));
   } else {
     const bool repeat = false;
-    if (OB_FAIL(hb_timer_.schedule(hb_, DELAY_TIME, repeat))) {
+    if (OB_FAIL(hb_timer_.schedule(hb_, DELAY_TIME / 10, repeat))) {
       LOG_WARN("schedule failed", LITERAL_K(DELAY_TIME), K(repeat), K(ret));
     }
   }

@@ -200,9 +200,9 @@ void ObHeartbeatService::do_work()
           }
         }
         if(OB_FAIL(ret)) {
-          idle(HB_FAILED_IDLE_TIME_US);
+          idle(HB_FAILED_IDLE_TIME_US / 10);
         } else {
-          idle(HB_IDLE_TIME_US);
+          idle(HB_IDLE_TIME_US / 2);
         }
       }
     } // end while
